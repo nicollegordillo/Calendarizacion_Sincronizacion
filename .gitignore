@@ -1,0 +1,33 @@
+# Ignorar carpetas de build
+build/
+*/build/
+*/build-*/
+
+# Ignorar ejecutables y objetos
+*.o
+*.obj
+*.so
+*.dll
+*.exe
+*.a
+
+# Ignorar archivos generados por Qt (moc, rcc, uic)
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+
+# Archivos de respaldo y temporales
+*.autosave
+*.swp
+*~
+*.bak
+*.tmp
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de configuración de Qt Creator (opcional)
+*.pro.user*
+*.qbs.user*
+*.creator.user*

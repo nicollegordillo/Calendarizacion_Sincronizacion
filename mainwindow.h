@@ -3,12 +3,40 @@
 
 #include <QMainWindow>
 
-class MainWindow : public QMainWindow
-{
+class QStackedWidget;
+class QComboBox;
+class QPushButton;
+class QLineEdit;
+class QCheckBox;
+class QGroupBox;
+class QRadioButton;
+class QButtonGroup;
+
+class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+private slots:
+    void mostrarAyuda();
+    void cambiarModo(int state);
+    void algoritmoSeleccionado();
+    void generarSimulador();
+
+private:
+    void crearInterfaz();
+
+    QWidget *central;
+    QCheckBox *modoSwitch;
+    QStackedWidget *stackConfiguracion;
+    QGroupBox *grupoAlgoritmo;
+    QButtonGroup *algoritmoButtons;
+    QLineEdit *campoQuantum;
+    QComboBox *comboAlgoritmos;
+    QPushButton *botonGenerar;
 };
+
 #endif // MAINWINDOW_H
+
