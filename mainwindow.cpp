@@ -4,11 +4,9 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QGroupBox>
-#include <QComboBox>
 #include <QFileDialog>
 #include <QCheckBox>
 #include <QLineEdit>
-#include <QButtonGroup>
 #include <QStackedWidget>
 #include <QDebug>
 #include <QMessageBox>
@@ -31,10 +29,39 @@ MainWindow::MainWindow(QWidget *parent)
     QGroupBox *configGroup = new QGroupBox("Configuración");
     QVBoxLayout *configLayout = new QVBoxLayout(configGroup);
 
-    QComboBox *modoCombo = new QComboBox;
-    modoCombo->addItems({"Calendarización", "Sincronización"});
-    configLayout->addWidget(new QLabel("Modo:"));
-    configLayout->addWidget(modoCombo);
+    // Switch visual: Calendarización <switch> Sincronización
+    QHBoxLayout *modoLayout = new QHBoxLayout;
+    QLabel *labelCal = new QLabel("Calendarización");
+    QCheckBox *modoSwitch = new QCheckBox;
+    QLabel *labelSync = new QLabel("Sincronización");
+
+    modoSwitch->setChecked(false);
+    modoSwitch->setFixedSize(60, 30);
+
+    modoSwitch->setStyleSheet(R"(
+        QCheckBox {
+            background-color: lightgray;
+            border-radius: 15px;
+            padding: 2px;
+        }
+        QCheckBox::indicator {
+            width: 26px;
+            height: 26px;
+            border-radius: 13px;
+            background-color: white;
+            margin-left: 2px;
+            transition: margin 0.2s ease;
+        }
+        QCheckBox::indicator:checked {
+            margin-left: 30px;
+        }
+    )");
+
+    modoLayout->addWidget(labelCal);
+    modoLayout->addWidget(modoSwitch);
+    modoLayout->addWidget(labelSync);
+    modoLayout->addStretch();
+    configLayout->addLayout(modoLayout);
 
     QStackedWidget *configStack = new QStackedWidget;
 
@@ -93,7 +120,9 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(central);
 
     // --- Conexiones ---
-    connect(modoCombo, &QComboBox::currentIndexChanged, configStack, &QStackedWidget::setCurrentIndex);
+    connect(modoSwitch, &QCheckBox::toggled, [=](bool checked) {
+        configStack->setCurrentIndex(checked ? 1 : 0);
+    });
 
     auto conectarBotonArchivo = [](QPushButton *boton, QLineEdit *destino) {
         QObject::connect(boton, &QPushButton::clicked, [=]() {
@@ -127,6 +156,7 @@ void MainWindow::algoritmoSeleccionado() {
 void MainWindow::generarSimulador() {
     // Lógica futura: validación de archivos + ejecución de simulación
 }
+
 
 
 
