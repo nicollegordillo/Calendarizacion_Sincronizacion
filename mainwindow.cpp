@@ -10,8 +10,6 @@
 #include <QStackedWidget>
 #include <QDebug>
 #include <QMessageBox>
-#include <QRadioButton>
-#include <QButtonGroup>
 #include <QComboBox>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -33,7 +31,6 @@ MainWindow::MainWindow(QWidget *parent)
     QGroupBox *configGroup = new QGroupBox("Configuración");
     QVBoxLayout *configLayout = new QVBoxLayout;
 
-    // Switch visual: Calendarización <switch> Sincronización
     QHBoxLayout *modoLayout = new QHBoxLayout;
     QLabel *labelCal = new QLabel("Calendarización");
     QCheckBox *modoSwitch = new QCheckBox;
@@ -41,7 +38,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     modoSwitch->setChecked(false);
     modoSwitch->setFixedSize(60, 30);
-
     modoSwitch->setStyleSheet(R"(
     QCheckBox {
         background-color: lightgray;
@@ -71,6 +67,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     configGroup->setLayout(configLayout);
     mainLayout->addWidget(configGroup);
+
     // --- Página Calendarización ---
     QWidget *calPage = new QWidget;
     QVBoxLayout *calLayout = new QVBoxLayout(calPage);
@@ -78,8 +75,8 @@ MainWindow::MainWindow(QWidget *parent)
     QLineEdit *lineProcCal = new QLineEdit;
     lineProcCal->setReadOnly(true);
     calLayout->addWidget(new QLabel("Procesos (.txt):"));
-    calLayout->addWidget(btnProcCal);
     calLayout->addWidget(lineProcCal);
+    calLayout->addWidget(btnProcCal);
     configStack->addWidget(calPage);
 
     // --- Página Sincronización ---
@@ -103,68 +100,56 @@ MainWindow::MainWindow(QWidget *parent)
     syncLayout->addWidget(btnAccSync);
     configStack->addWidget(syncPage);
 
-
     // --- Algoritmo ---
     QGroupBox *algGroup = new QGroupBox("Algoritmo");
     QVBoxLayout *algLayout = new QVBoxLayout(algGroup);
     QHBoxLayout *algOptionsLayout = new QHBoxLayout;
-    QButtonGroup *algorithms = new QButtonGroup(this);
-    QRadioButton *rbFIFO = new QRadioButton("FIFO");
-    QRadioButton *rbSJF = new QRadioButton("SJF");
-    QRadioButton *rbSRT = new QRadioButton("SRT");
-    QRadioButton *rbRR = new QRadioButton("Round Robin");
-    QRadioButton *rbPriority = new QRadioButton("Priority");
-    algorithms->addButton(rbFIFO);
-    algorithms->addButton(rbSJF);
-    algorithms->addButton(rbSRT);
-    algorithms->addButton(rbRR);
-    algorithms->addButton(rbPriority);
-    rbFIFO->setChecked(true);
+
+    QCheckBox *cbFIFO = new QCheckBox("FIFO");
+    QCheckBox *cbSJF = new QCheckBox("SJF");
+    QCheckBox *cbSRT = new QCheckBox("SRT");
+    QCheckBox *cbRR = new QCheckBox("Round Robin");
+    QCheckBox *cbPriority = new QCheckBox("Priority");
+
+    algOptionsLayout->addWidget(cbFIFO);
+    algOptionsLayout->addWidget(cbSJF);
+    algOptionsLayout->addWidget(cbSRT);
+    algOptionsLayout->addWidget(cbRR);
+    algOptionsLayout->addWidget(cbPriority);
 
     QHBoxLayout *quantumLayout = new QHBoxLayout;
     QLabel *quantumLabel = new QLabel("Quantum:");
     QLineEdit *campoQuantum = new QLineEdit;
     campoQuantum->setPlaceholderText("Quantum");
 
-    algOptionsLayout->addWidget(rbFIFO);
-    algOptionsLayout->addWidget(rbSJF);
-    algOptionsLayout->addWidget(rbSRT);
-    algOptionsLayout->addWidget(rbRR);
-    algOptionsLayout->addWidget(rbPriority);
-
     algLayout->addLayout(algOptionsLayout);
     quantumLayout->addWidget(quantumLabel);
     quantumLayout->addWidget(campoQuantum);
     algLayout->addLayout(quantumLayout);
 
-    rbFIFO->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    rbSJF->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    rbSRT->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    rbRR->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    rbPriority->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    cbFIFO->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    cbSJF->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    cbSRT->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    cbRR->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    cbPriority->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
-    // Sincronización extra
     QHBoxLayout *syncModeLayout = new QHBoxLayout;
     QLabel *labelMutex = new QLabel("Mutex");
     QCheckBox *syncSwitch = new QCheckBox;
     QLabel *labelSemaphore = new QLabel("Semaphore");
 
     syncSwitch->setFixedSize(60, 30);
-    syncSwitch->setStyleSheet(modoSwitch->styleSheet());  // Usa el mismo estilo
+    syncSwitch->setStyleSheet(modoSwitch->styleSheet());
 
     syncModeLayout->addWidget(labelMutex);
     syncModeLayout->addWidget(syncSwitch);
     syncModeLayout->addWidget(labelSemaphore);
     algLayout->addLayout(syncModeLayout);
 
-
     mainLayout->addWidget(algGroup);
-    rbFIFO->setVisible(true);
-    rbSJF->setVisible(true);
-    rbSRT->setVisible(true);
-    rbRR->setVisible(true);
-    rbPriority->setVisible(true);
-    campoQuantum->setVisible(false);  // Solo visible si se marca RR
+
+    campoQuantum->setVisible(false);
+    quantumLabel->setVisible(false);
     syncSwitch->setVisible(false);
     labelSemaphore->setVisible(false);
     labelMutex->setVisible(false);
@@ -181,39 +166,40 @@ MainWindow::MainWindow(QWidget *parent)
         bool isSync = modoSwitch->isChecked();
         configStack->setCurrentIndex(isSync ? 1 : 0);
 
-        rbFIFO->setVisible(!isSync);
-        rbSJF->setVisible(!isSync);
-        rbSRT->setVisible(!isSync);
-        rbRR->setVisible(!isSync);
-        rbPriority->setVisible(!isSync);
-        quantumLabel->setVisible(!isSync && rbRR->isChecked());
-        campoQuantum->setVisible(!isSync && rbRR->isChecked());
+        cbFIFO->setVisible(!isSync);
+        cbSJF->setVisible(!isSync);
+        cbSRT->setVisible(!isSync);
+        cbRR->setVisible(!isSync);
+        cbPriority->setVisible(!isSync);
+        bool mostrarQuantum = !isSync && cbRR->isChecked();
+        quantumLabel->setVisible(mostrarQuantum);
+        campoQuantum->setVisible(mostrarQuantum);
         syncSwitch->setVisible(isSync);
         labelSemaphore->setVisible(isSync);
         labelMutex->setVisible(isSync);
     }, Qt::QueuedConnection);
 
-
-
-
     // --- Conexiones ---
     connect(modoSwitch, &QCheckBox::toggled, [=](bool checked) {
         configStack->setCurrentIndex(checked ? 1 : 0);
 
-        rbFIFO->setVisible(!checked);
-        rbSJF->setVisible(!checked);
-        rbSRT->setVisible(!checked);
-        rbRR->setVisible(!checked);
-        rbPriority->setVisible(!checked);
-        quantumLabel->setVisible(!checked && rbRR->isChecked());
-        campoQuantum->setVisible(!checked && rbRR->isChecked());
+        cbFIFO->setVisible(!checked);
+        cbSJF->setVisible(!checked);
+        cbSRT->setVisible(!checked);
+        cbRR->setVisible(!checked);
+        cbPriority->setVisible(!checked);
+        bool mostrarQuantum = !checked && cbRR->isChecked();
+        quantumLabel->setVisible(mostrarQuantum);
+        campoQuantum->setVisible(mostrarQuantum);
         syncSwitch->setVisible(checked);
         labelSemaphore->setVisible(checked);
         labelMutex->setVisible(checked);
     });
 
-    connect(rbRR, &QRadioButton::toggled, [=](bool checked) {
-        campoQuantum->setVisible(checked);
+    connect(cbRR, &QCheckBox::toggled, [=](bool checked) {
+        bool mostrarQuantum = checked && !modoSwitch->isChecked();
+        campoQuantum->setVisible(mostrarQuantum);
+        quantumLabel->setVisible(mostrarQuantum);
     });
 
     auto conectarBotonArchivo = [](QPushButton *boton, QLineEdit *destino) {
@@ -237,17 +223,12 @@ void MainWindow::mostrarAyuda() {
     QMessageBox::information(this, "Ayuda", "Esta aplicación permite simular algoritmos de calendarización y sincronización.");
 }
 
-void MainWindow::cambiarModo(int) {
-    // Lógica futura: cambiar entre modos calendarización / sincronización
-}
+void MainWindow::cambiarModo(int) {}
 
-void MainWindow::algoritmoSeleccionado() {
-    // Lógica futura: mostrar campo de quantum si el algoritmo seleccionado es RR
-}
+void MainWindow::algoritmoSeleccionado() {}
 
-void MainWindow::generarSimulador() {
-    // Lógica futura: validación de archivos + ejecución de simulación
-}
+void MainWindow::generarSimulador() {}
+
 
 
 
