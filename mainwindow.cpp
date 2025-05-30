@@ -71,35 +71,57 @@ MainWindow::MainWindow(QWidget *parent)
     // --- Página Calendarización ---
     QWidget *calPage = new QWidget;
     QVBoxLayout *calLayout = new QVBoxLayout(calPage);
+    QHBoxLayout *calBtnLayout = new QHBoxLayout;
     QPushButton *btnProcCal = new QPushButton("Seleccionar archivo de procesos");
-    QLineEdit *lineProcCal = new QLineEdit;
+    QPushButton *procViewCal = new QPushButton("Ver");
+    lineProcCal = new QLineEdit(this);
+
     lineProcCal->setReadOnly(true);
     calLayout->addWidget(new QLabel("Procesos (.txt):"));
     calLayout->addWidget(lineProcCal);
-    calLayout->addWidget(btnProcCal);
+    calBtnLayout->addWidget(btnProcCal,8);
+    calBtnLayout->addWidget(procViewCal,2);
+    calLayout->addLayout(calBtnLayout);
     configStack->addWidget(calPage);
 
     // --- Página Sincronización ---
     QWidget *syncPage = new QWidget;
     QVBoxLayout *syncLayout = new QVBoxLayout(syncPage);
-    QLineEdit *lineProcSync = new QLineEdit, *lineRecSync = new QLineEdit, *lineAccSync = new QLineEdit;
-    QPushButton *btnProcSync = new QPushButton("Seleccionar archivo de procesos");
-    QPushButton *btnRecSync = new QPushButton("Seleccionar archivo de recursos");
-    QPushButton *btnAccSync = new QPushButton("Seleccionar archivo de acciones");
+    lineProcSync = new QLineEdit(this);
     lineProcSync->setReadOnly(true);
+    lineRecSync = new QLineEdit(this);
     lineRecSync->setReadOnly(true);
+    lineAccSync = new QLineEdit(this);
     lineAccSync->setReadOnly(true);
+
+    QPushButton *btnProcSync = new QPushButton("Seleccionar archivo de procesos");
+    QPushButton *procViewSync = new QPushButton("Ver");
     syncLayout->addWidget(new QLabel("Procesos (.txt):"));
     syncLayout->addWidget(lineProcSync);
-    syncLayout->addWidget(btnProcSync);
+    QHBoxLayout *syncBtn1 = new QHBoxLayout;
+    syncBtn1->addWidget(btnProcSync,8);
+    syncBtn1->addWidget(procViewSync,2);
+    syncLayout->addLayout(syncBtn1);
+
+    QPushButton *btnRecSync = new QPushButton("Seleccionar archivo de recursos");
+    QPushButton *recViewSync = new QPushButton("Ver");
     syncLayout->addWidget(new QLabel("Recursos (.txt):"));
     syncLayout->addWidget(lineRecSync);
-    syncLayout->addWidget(btnRecSync);
+    QHBoxLayout *syncBtn2 = new QHBoxLayout;
+    syncBtn2->addWidget(btnRecSync,8);
+    syncBtn2->addWidget(recViewSync,2);
+    syncLayout->addLayout(syncBtn2);
+
+    QPushButton *btnAccSync = new QPushButton("Seleccionar archivo de acciones");
+    QPushButton *accViewSync = new QPushButton("Ver");
+    QHBoxLayout *syncBtn3 = new QHBoxLayout;
     syncLayout->addWidget(new QLabel("Acciones (.txt):"));
     syncLayout->addWidget(lineAccSync);
-    syncLayout->addWidget(btnAccSync);
-    configStack->addWidget(syncPage);
+    syncBtn3->addWidget(btnAccSync,8);
+    syncBtn3->addWidget(accViewSync,2);
+    syncLayout->addLayout(syncBtn3);
 
+    configStack->addWidget(syncPage);
     // --- Algoritmo ---
     QGroupBox *algGroup = new QGroupBox("Algoritmo");
     QVBoxLayout *algLayout = new QVBoxLayout(algGroup);
@@ -215,6 +237,18 @@ MainWindow::MainWindow(QWidget *parent)
     conectarBotonArchivo(btnAccSync, lineAccSync);
 
     connect(helpButton, &QPushButton::clicked, this, &MainWindow::mostrarAyuda);
+    connect(procViewCal, &QPushButton::clicked, this, [=]() {
+        mostrarArchivo(0);  // 0 = Cal-Process
+    });
+    connect(procViewSync, &QPushButton::clicked, this, [=]() {
+        mostrarArchivo(1);  // 1 = Sync-Process
+    });
+    connect(recViewSync, &QPushButton::clicked, this, [=]() {
+        mostrarArchivo(2);  // 2 = Sync-Resources
+    });
+    connect(accViewSync, &QPushButton::clicked, this, [=]() {
+        mostrarArchivo(3);  // 3 = Sync-Actions
+    });
 }
 
 MainWindow::~MainWindow() {}
@@ -223,11 +257,42 @@ void MainWindow::mostrarAyuda() {
     QMessageBox::information(this, "Ayuda", "Esta aplicación permite simular algoritmos de calendarización y sincronización.");
 }
 
+
+QString MainWindow::readFileContents(const QString &filePath) {
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
+        return "No se pudo abrir el archivo";
+    } else {
+        QTextStream in(&file);
+        return in.readAll();
+    }
+}
+void MainWindow::mostrarArchivo(int view_case) {
+    QLineEdit* targetLineEdit = nullptr;
+    if (view_case== 0){
+        targetLineEdit = lineProcCal;
+    } else if (view_case==1){
+        targetLineEdit = lineProcSync;
+    } else if (view_case==2){
+        targetLineEdit = lineRecSync;
+    } else if (view_case==3){
+        targetLineEdit = lineAccSync;
+    }
+    if (!targetLineEdit) {
+        QMessageBox::information(this, "Contenido de Archivo", "Direccion Vacia");
+    } else {
+        QString path = targetLineEdit->text();
+        QString content = readFileContents(path);
+        QMessageBox::information(this, "Contenido de Archivo", content);
+    }
+}
+
 void MainWindow::cambiarModo(int) {}
 
 void MainWindow::algoritmoSeleccionado() {}
 
 void MainWindow::generarSimulador() {}
+
 
 
 

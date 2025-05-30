@@ -20,7 +20,9 @@ public:
     ~MainWindow();
 
 private slots:
+    QString readFileContents(const QString &);
     void mostrarAyuda();
+    void mostrarArchivo(int);
     void cambiarModo(int state);
     void algoritmoSeleccionado();
     void generarSimulador();
@@ -34,6 +36,10 @@ private:
     QGroupBox *grupoAlgoritmo;
     QButtonGroup *algoritmoButtons;
     QLineEdit *campoQuantum;
+    QLineEdit *lineProcCal;
+    QLineEdit *lineProcSync;
+    QLineEdit *lineRecSync;
+    QLineEdit *lineAccSync;
     QComboBox *comboAlgoritmos;
     QPushButton *botonGenerar;
 };
