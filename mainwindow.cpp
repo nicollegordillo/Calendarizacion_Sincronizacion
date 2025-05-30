@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "processes.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -11,10 +12,14 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QComboBox>
+#include <QScrollArea>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent),
+    globalProcs(nullptr),
+    showSim(true)
 {
+    setFixedSize(600, 600);
     QWidget *central = new QWidget(this);
     QVBoxLayout *mainLayout = new QVBoxLayout(central);
     setCentralWidget(central);
@@ -201,6 +206,64 @@ MainWindow::MainWindow(QWidget *parent)
         labelMutex->setVisible(isSync);
     }, Qt::QueuedConnection);
 
+    simContainer = new QWidget(this);
+    QVBoxLayout *innerLayout = new QVBoxLayout(simContainer);
+
+    QHBoxLayout *symBtnLayout = new QHBoxLayout;
+    QPushButton *btnSimNext = new QPushButton();
+    QIcon playIcon = style()->standardIcon(QStyle::SP_MediaPlay);
+    btnSimNext->setIcon(playIcon);
+    btnSimNext->setFixedSize(30, 30);
+    QPushButton *btnSimFinish = new QPushButton();
+    QIcon forwardIcon = style()->standardIcon(QStyle::SP_MediaSeekForward);
+    btnSimFinish->setIcon(forwardIcon);
+    btnSimFinish->setFixedSize(30, 30);
+    QPushButton *btnSimRefresh = new QPushButton();
+    QIcon refreshIcon = style()->standardIcon(QStyle::SP_MediaSkipBackward);
+    btnSimRefresh->setIcon(refreshIcon);
+    btnSimRefresh->setFixedSize(30, 30);
+    symBtnLayout->addWidget(btnSimNext);
+    symBtnLayout->addWidget(btnSimFinish);
+    symBtnLayout->addWidget(btnSimRefresh);
+
+    QGroupBox *timelineGroup = new QGroupBox("Algoritmo");
+
+    QWidget *scrollContent = new QWidget();
+    QHBoxLayout *scrollLayout = new QHBoxLayout(scrollContent);
+    scrollLayout->setAlignment(Qt::AlignLeft);
+
+    QLabel* square1 = new QLabel("P1");
+    square1->setAlignment(Qt::AlignCenter);
+    square1->setFixedSize(40, 40);  // Ensures it's square
+    square1->setStyleSheet(
+        "background-color: #3498db;"   // Any color
+        "border-radius: 10px;"         // Rounded corners
+        );
+    QLabel* square2 = new QLabel("P2");
+    square2->setAlignment(Qt::AlignCenter);
+    square2->setFixedSize(40, 40);  // Ensures it's square
+    square2->setStyleSheet(
+        "background-color: #f54254;"   // Any color
+        "border-radius: 10px;"         // Rounded corners
+        );
+    scrollLayout->addWidget(square1);
+    scrollLayout->addWidget(square2);
+
+
+    QScrollArea *scrollArea = new QScrollArea();
+
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setWidget(scrollContent);
+
+    QVBoxLayout *timelineLayout = new QVBoxLayout(timelineGroup);
+    timelineLayout->addWidget(scrollArea);
+
+    innerLayout->addLayout(symBtnLayout);
+    innerLayout->addWidget(timelineGroup);
+    simLayout->addWidget(simContainer);
+
+    connect(btnSimular, &QPushButton::clicked, this, &MainWindow::generarSimulador);
+
     // --- Conexiones ---
     connect(modoSwitch, &QCheckBox::toggled, [=](bool checked) {
         configStack->setCurrentIndex(checked ? 1 : 0);
@@ -283,6 +346,14 @@ void MainWindow::mostrarArchivo(int view_case) {
     } else {
         QString path = targetLineEdit->text();
         QString content = readFileContents(path);
+        processes Myproc = processes(path);
+        int len = Myproc.names.length();
+        for (int i = 0; i<len;i++){
+             qDebug() << "Process name:" << Myproc.names[i]
+            << "AT:" << Myproc.arrivalTime[i]
+            << "BT:" << Myproc.burstTime[i]
+            << "Priority:" << Myproc.priority[i];
+        }
         QMessageBox::information(this, "Contenido de Archivo", content);
     }
 }
@@ -291,7 +362,19 @@ void MainWindow::cambiarModo(int) {}
 
 void MainWindow::algoritmoSeleccionado() {}
 
-void MainWindow::generarSimulador() {}
+void MainWindow::generarSimulador() {
+    // QString path = lineProcCal->text();
+    // globalProcs = processes(path);
+    // int len = globalProcs.names.length();
+    // for (int i = 0; i<len;i++){
+    //     qDebug() << "Process name:" << globalProcs.names[i]
+    //              << "AT:" << globalProcs.arrivalTime[i]
+    //              << "BT:" << globalProcs.burstTime[i]
+    //              << "Priority:" << globalProcs.priority[i];
+    // }
+    showSim = !showSim;
+    simContainer->setVisible(showSim);
+}
 
 
 

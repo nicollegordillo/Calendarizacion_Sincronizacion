@@ -4,7 +4,9 @@ CONFIG += c++11
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    processes.cpp
 
 HEADERS += \
-    mainwindow.h
+    mainwindow.h \
+    processes.h

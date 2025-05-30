@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <processes.h>
 
 class QStackedWidget;
 class QComboBox;
@@ -11,6 +12,7 @@ class QCheckBox;
 class QGroupBox;
 class QRadioButton;
 class QButtonGroup;
+class QLabel;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -29,7 +31,8 @@ private slots:
 
 private:
     void crearInterfaz();
-
+    QVector<QLabel*> labelList;
+    processes globalProcs;
     QWidget *central;
     QCheckBox *modoSwitch;
     QStackedWidget *stackConfiguracion;
@@ -42,6 +45,8 @@ private:
     QLineEdit *lineAccSync;
     QComboBox *comboAlgoritmos;
     QPushButton *botonGenerar;
+    QWidget *simContainer;
+    bool showSim;
 };
 
 #endif // MAINWINDOW_H
