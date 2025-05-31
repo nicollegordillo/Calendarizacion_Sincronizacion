@@ -477,15 +477,52 @@ void MainWindow::generarSimulador() {
 
 
     if(activeAlgorithms.length()==1){ // Version con 1 algoritmo elegido
+        timeLabel->setText("Ciclo Actual: 0");
+        if (activeAlgorithms.contains("Priority")){ // FIFO
+            schedulerSim = new scheduler(
+                path,
+                0, // Algorithm 0 = FIFO
+                0  // quantum (para default yo digo que se quede en 0 )
+                );
+            return;
+        }
+        if (activeAlgorithms.contains("SJF")){ // SJF
+            schedulerSim = new scheduler(
+                path,
+                1, // Algorithm 4 = SJF
+                0  // quantum (bien xd)
+                );
+            return;
+        }
+        if (activeAlgorithms.contains("SRT")){ // SRT
+            qDebug() << "Starting Init";
+            schedulerSim = new scheduler(
+                path,
+                2, // Algorithm 4 = Priority
+                0  // quantum
+                );
+            qDebug() << "Init Successful";
+            return;
+        }
+        if (activeAlgorithms.contains("RR")){ // RR
+            qDebug() << "Starting Init";
+            schedulerSim = new scheduler(
+                path,
+                2, // Algorithm 4 = Priority
+                quantum  // quantum (hoy si)
+                );
+            qDebug() << "Init Successful";
+            return;
+        }
         if (activeAlgorithms.contains("Priority")){ // Priority
             qDebug() << "Starting Init";
-            timeLabel->setText("Ciclo Actual: 0");
             schedulerSim = new scheduler(
                  path,
                  4, // Algorithm 4 = Priority
-                 0  // quantum (bien xd)
+                 0  // quantum
             );
             qDebug() << "Init Successful";
+            return;
         }
     }
 }
