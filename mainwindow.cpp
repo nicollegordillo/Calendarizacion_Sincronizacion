@@ -508,7 +508,7 @@ void MainWindow::generarSimulador() {
             qDebug() << "Starting Init";
             schedulerSim = new scheduler(
                 path,
-                2, // Algorithm 4 = Priority
+                3, // Algorithm 4 = Priority
                 quantum  // quantum (hoy si)
                 );
             qDebug() << "Init Successful";

@@ -104,10 +104,112 @@ void scheduler::nextSJF(){
 }
 
 void scheduler::nextSRT(){
+    // 0. Verificar si hay procesos pendientes
+    bool bursts_left = false;
+    for (int i = 0; i < snapshot.names.length(); i++) {
+        if (snapshot.burstTime[i] > 0) {
+            bursts_left = true;
+            break;
+        }
+    }
+
+    if (!bursts_left) {
+        finished = true;
+        return;
+    }
+
+    // 1. Agregar procesos nuevos
+    for (int i = 0; i < snapshot.names.length(); i++) {
+        if (snapshot.arrivalTime[i] == t) {
+            queue.append(i);
+        }
+    }
+
+    // 2. Buscar el proceso con menor burst restante
+    int min_time = INT_MAX;
+    int selected = -1;
+    for (int i = 0; i < queue.size(); i++) {
+        int idx = queue[i];
+        if (snapshot.burstTime[idx] < min_time) {
+            min_time = snapshot.burstTime[idx];
+            selected = idx;
+        }
+    }
+
+    // 3. Ejecutar un ciclo de tiempo
+    if (selected != -1) {
+        snapshot.burstTime[selected] -= 1;
+        timeline.append(selected);
+
+        // Si terminó, quitarlo de la cola
+        if (snapshot.burstTime[selected] == 0) {
+            queue.erase(std::remove(queue.begin(), queue.end(), selected), queue.end());
+        }
+    } else {
+        // No hay proceso disponible, añadir "idle"
+        timeline.append(-1); // -1 puede representar CPU ociosa si lo manejas
+    }
+
+    t++;
 
 }
 
 void scheduler::nextRR(){
+    // 0. Verificar si hay procesos pendientes
+    bool bursts_left = false;
+    for (int i = 0; i < snapshot.names.length(); i++) {
+        if (snapshot.burstTime[i] > 0) {
+            bursts_left = true;
+            break;
+        }
+    }
+
+    if (!bursts_left) {
+        finished = true;
+        return;
+    }
+
+    // 1. Agregar procesos nuevos
+    for (int i = 0; i < snapshot.names.length(); i++) {
+        if (snapshot.arrivalTime[i] == t) {
+            queue.append(i);
+        }
+    }
+
+    static int current_quantum = 0;
+    static int current_process = -1;
+
+    // 2. Si no hay proceso activo o terminó/cuántum expiró, elegir el siguiente
+    if (current_process == -1 || current_quantum == 0 || snapshot.burstTime[current_process] == 0) {
+        // Si terminó, eliminarlo de la cola
+        if (current_process != -1 && snapshot.burstTime[current_process] == 0) {
+            queue.erase(std::remove(queue.begin(), queue.end(), current_process), queue.end());
+        } else if (current_process != -1 && current_quantum == 0) {
+            // Si se agotó el quantum, moverlo al final de la cola
+            queue.erase(std::remove(queue.begin(), queue.end(), current_process), queue.end());
+            queue.append(current_process);
+        }
+
+        // Seleccionar siguiente proceso
+        if (!queue.isEmpty()) {
+            current_process = queue.front();
+            current_quantum = quantum;
+        } else {
+            current_process = -1;
+        }
+    }
+
+    // 3. Ejecutar el proceso
+    if (current_process != -1) {
+        snapshot.burstTime[current_process] -= 1;
+        current_quantum -= 1;
+        timeline.append(current_process);
+    } else {
+        // CPU ociosa
+        timeline.append(-1);
+    }
+
+    t++;
 
 }
 
