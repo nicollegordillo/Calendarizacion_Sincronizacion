@@ -5,8 +5,10 @@ CONFIG += c++11
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    processes.cpp
+    processes.cpp \
+    scheduler.cpp
 
 HEADERS += \
     mainwindow.h \
-    processes.h
+    processes.h \
+    scheduler.h

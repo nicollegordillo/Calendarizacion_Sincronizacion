@@ -464,8 +464,8 @@ void MainWindow::generarSimulador() {
     simContainer->setVisible(true);
         // Process init
     globalProcs = processes(path);
-    int len = globalProcs.names.length();
-    for (int i = 0; i<len;i++){
+    int procLen = globalProcs.names.length();
+    for (int i = 0; i<procLen;i++){
         qDebug() << "Process name:" << globalProcs.names[i]
                  << "AT:" << globalProcs.arrivalTime[i]
                  << "BT:" << globalProcs.burstTime[i]
@@ -473,8 +473,8 @@ void MainWindow::generarSimulador() {
     }
 
 
-    if(activeAlgorithms.length==1){ // Version con 1 algoritmo elegido
-        if activeAlgorithms.contains("Priority"){ // Priority
+    if(activeAlgorithms.length()==1){ // Version con 1 algoritmo elegido
+        if (activeAlgorithms.contains("Priority")){ // Priority
 
         }
     }
