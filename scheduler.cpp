@@ -26,6 +26,30 @@ QString scheduler::getColorByName(QString &name){
     }
     return snapshot.hexColor[id];
 }
+
+void scheduler::calculateNext(){
+    if(method == 0){
+        nextFIFO();
+        return;
+    }
+    if(method == 1){
+        nextSJF();
+        return;
+    }
+    if(method == 2){
+        nextSRT();
+        return;
+    }
+    if(method == 3){
+        nextRR();
+        return;
+    }
+    if(method == 4){
+        nextPS();
+        return;
+    }
+}
+
 void scheduler::nextPS(){
     // 0. Stop if finished
     bool bursts_left = false;

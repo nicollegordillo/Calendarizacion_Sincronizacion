@@ -11,6 +11,7 @@ public:
     scheduler(const QString  &, int, int);
     QString getExcecutedName();
     QString getColorByName(QString &);
+    void calculateNext();
     void nextFIFO();
     void nextSJF();
     void nextSRT();

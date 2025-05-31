@@ -20,8 +20,13 @@ MainWindow::MainWindow(QWidget *parent)
 {
     setFixedSize(600, 600);
     QWidget *central = new QWidget(this);
+
     QVBoxLayout *mainLayout = new QVBoxLayout(central);
-    setCentralWidget(central);
+
+    QScrollArea *mainScrollable = new QScrollArea;
+    mainScrollable->setWidgetResizable(true);
+    mainScrollable->setWidget(central);
+    setCentralWidget(mainScrollable);
 
     // --- Header con botón de ayuda (?) ---
     QHBoxLayout *headerLayout = new QHBoxLayout;
@@ -180,7 +185,7 @@ MainWindow::MainWindow(QWidget *parent)
     labelSemaphore->setVisible(false);
     labelMutex->setVisible(false);
 
-    // --- Simulación ---
+    // --- Simulación - Constantes ---
     QGroupBox *simGroup = new QGroupBox("Simulación");
     QVBoxLayout *simLayout = new QVBoxLayout(simGroup);
     simLayout->addWidget(new QLabel("Si la información ya fue seleccionada, presione generar simulador."));
@@ -209,6 +214,8 @@ MainWindow::MainWindow(QWidget *parent)
         labelMutex->setVisible(isSync);
     }, Qt::QueuedConnection);
 
+
+    // --- Simulacion - Variables ---
     errorMsg = new QLabel("Placeholder :)");
     errorMsg->setStyleSheet("QLabel { color : red; }");
     errorMsg->setVisible(false);
@@ -216,26 +223,39 @@ MainWindow::MainWindow(QWidget *parent)
     // Timeline
     simContainer = new QWidget(this);
     QVBoxLayout *innerLayout = new QVBoxLayout(simContainer);
-
     QHBoxLayout *symBtnLayout = new QHBoxLayout;
+
     QPushButton *btnSimNext = new QPushButton();
     QIcon playIcon = style()->standardIcon(QStyle::SP_MediaPlay);
     btnSimNext->setIcon(playIcon);
     btnSimNext->setFixedSize(30, 30);
+
     QPushButton *btnSimFinish = new QPushButton();
     QIcon forwardIcon = style()->standardIcon(QStyle::SP_MediaSeekForward);
     btnSimFinish->setIcon(forwardIcon);
     btnSimFinish->setFixedSize(30, 30);
+
     QPushButton *btnSimRefresh = new QPushButton();
     QIcon refreshIcon = style()->standardIcon(QStyle::SP_BrowserReload);
     btnSimRefresh->setIcon(refreshIcon);
     btnSimRefresh->setFixedSize(30, 30);
+
+
+    timeLabel = new QLabel("Placeholder :)");
+
+    finishedMsg = new QLabel("Calendarizacion Finalizada!");
+    finishedMsg->setStyleSheet("QLabel { color : green; }");
+    finishedMsg->setVisible(false);
+
+
     symBtnLayout->addWidget(btnSimNext);
     symBtnLayout->addWidget(btnSimFinish);
     symBtnLayout->addWidget(btnSimRefresh);
+    symBtnLayout->addWidget(timeLabel);
+    symBtnLayout->addWidget(finishedMsg);
 
     QGroupBox *timelineGroup = new QGroupBox("Algoritmo");
-
+    timelineGroup->setMinimumHeight(100);
     QWidget *scrollContent = new QWidget();
     procTimelineLayout = new QHBoxLayout(scrollContent);
     procTimelineLayout->setAlignment(Qt::AlignLeft);
@@ -254,9 +274,6 @@ MainWindow::MainWindow(QWidget *parent)
     simLayout->addWidget(simContainer);
 
     connect(btnSimular, &QPushButton::clicked, this, &MainWindow::generarSimulador);
-
-
-
 
     // --- Conexiones ---
     connect(modoSwitch, &QCheckBox::toggled, [=](bool checked) {
@@ -400,6 +417,7 @@ void MainWindow::algoritmoSeleccionado() {}
 
 void MainWindow::generarSimulador() {
     errorMsg->setVisible(false);
+    finishedMsg->setVisible(false);
     QString path = lineProcCal->text();
 
     // Error handling
@@ -460,7 +478,8 @@ void MainWindow::generarSimulador() {
 
     if(activeAlgorithms.length()==1){ // Version con 1 algoritmo elegido
         if (activeAlgorithms.contains("Priority")){ // Priority
-             qDebug() << "Starting Init";
+            qDebug() << "Starting Init";
+            timeLabel->setText("Ciclo Actual: 0");
             schedulerSim = new scheduler(
                  path,
                  4, // Algorithm 4 = Priority
@@ -472,8 +491,9 @@ void MainWindow::generarSimulador() {
 }
 
 void MainWindow::calcularNextSim() {
-    schedulerSim->nextPS();
+    schedulerSim->calculateNext();
     if (!schedulerSim->finished){
+        timeLabel->setText("Ciclo Actual: "+QString::number(schedulerSim->t));
         QString name = schedulerSim->getExcecutedName();
         qDebug() << "T:"<< schedulerSim->t << name;
         QString col = schedulerSim->getColorByName(name);
@@ -487,6 +507,7 @@ void MainWindow::calcularNextSim() {
         procTimelineLayout->addWidget(tem);
 
     } else {
+        finishedMsg->setVisible(true);
         qDebug()<<"Finalizo!!";
     }
     return;
@@ -502,21 +523,14 @@ void MainWindow::resetSim() {
         }
         delete child;  // Deletes the layout item itself
     }
-    QString path = lineProcCal->text();
-    // Reset scheduler
-    schedulerSim = new scheduler(
-        path,
-        4, // Algorithm 4 = Priority
-        0  // quantum (bien xd)
-    );
+    generarSimulador();
 }
 
 
 void MainWindow::skipSim() {
-    schedulerSim->nextPS();
+    schedulerSim->calculateNext();
     while (!schedulerSim->finished){
         QString name = schedulerSim->getExcecutedName();
-        qDebug() << "T:"<< schedulerSim->t << name;
         QString col = schedulerSim->getColorByName(name);
         QLabel* tem = new QLabel(name);
         tem->setAlignment(Qt::AlignCenter);
@@ -526,7 +540,9 @@ void MainWindow::skipSim() {
                                          "border-radius: 10px;"         // Rounded corners
             );
         procTimelineLayout->addWidget(tem);
-
+        schedulerSim->calculateNext();
     }
+    timeLabel->setText("Ciclo Actual: "+QString::number(schedulerSim->t));
+    finishedMsg->setVisible(true);
     return;
 }

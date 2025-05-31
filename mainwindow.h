@@ -52,6 +52,8 @@ private:
     QLineEdit *lineRecSync;
     QLineEdit *lineAccSync;
     QLabel *errorMsg;
+    QLabel *finishedMsg;
+    QLabel *timeLabel;
     QComboBox *comboAlgoritmos;
     QPushButton *botonGenerar;
     QWidget *simContainer;
