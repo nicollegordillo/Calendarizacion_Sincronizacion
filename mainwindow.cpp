@@ -478,7 +478,7 @@ void MainWindow::generarSimulador() {
 
     if(activeAlgorithms.length()==1){ // Version con 1 algoritmo elegido
         timeLabel->setText("Ciclo Actual: 0");
-        if (activeAlgorithms.contains("Priority")){ // FIFO
+        if (activeAlgorithms.contains("FIFO")){ // FIFO
             schedulerSim = new scheduler(
                 path,
                 0, // Algorithm 0 = FIFO
