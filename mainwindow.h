@@ -28,9 +28,11 @@ private slots:
     void cambiarModo(int state);
     void algoritmoSeleccionado();
     void generarSimulador();
+    void refreshAlgorithms(int, int);
 
 private:
     void crearInterfaz();
+    QVector<QString> activeAlgorithms;
     QVector<QLabel*> labelList;
     processes globalProcs;
     QWidget *central;
@@ -43,6 +45,7 @@ private:
     QLineEdit *lineProcSync;
     QLineEdit *lineRecSync;
     QLineEdit *lineAccSync;
+    QLabel *errorMsg;
     QComboBox *comboAlgoritmos;
     QPushButton *botonGenerar;
     QWidget *simContainer;

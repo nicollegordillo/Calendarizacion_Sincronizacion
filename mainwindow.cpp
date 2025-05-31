@@ -17,7 +17,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
     globalProcs(nullptr),
-    showSim(true)
+    showSim(false)
 {
     setFixedSize(600, 600);
     QWidget *central = new QWidget(this);
@@ -146,7 +146,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     QHBoxLayout *quantumLayout = new QHBoxLayout;
     QLabel *quantumLabel = new QLabel("Quantum:");
-    QLineEdit *campoQuantum = new QLineEdit;
+    campoQuantum = new QLineEdit(this);
     campoQuantum->setPlaceholderText("Quantum");
 
     algLayout->addLayout(algOptionsLayout);
@@ -189,15 +189,19 @@ MainWindow::MainWindow(QWidget *parent)
     simLayout->addWidget(btnSimular);
     mainLayout->addWidget(simGroup);
 
+    activeAlgorithms = QVector<QString>();
     QMetaObject::invokeMethod(this, [=]() {
         bool isSync = modoSwitch->isChecked();
         configStack->setCurrentIndex(isSync ? 1 : 0);
+
+        activeAlgorithms.clear();
 
         cbFIFO->setVisible(!isSync);
         cbSJF->setVisible(!isSync);
         cbSRT->setVisible(!isSync);
         cbRR->setVisible(!isSync);
         cbPriority->setVisible(!isSync);
+
         bool mostrarQuantum = !isSync && cbRR->isChecked();
         quantumLabel->setVisible(mostrarQuantum);
         campoQuantum->setVisible(mostrarQuantum);
@@ -206,6 +210,11 @@ MainWindow::MainWindow(QWidget *parent)
         labelMutex->setVisible(isSync);
     }, Qt::QueuedConnection);
 
+    errorMsg = new QLabel("Placeholder :)");
+    errorMsg->setStyleSheet("QLabel { color : red; }");
+    errorMsg->setVisible(false);
+    simLayout->addWidget(errorMsg);
+    // Timeline
     simContainer = new QWidget(this);
     QVBoxLayout *innerLayout = new QVBoxLayout(simContainer);
 
@@ -260,6 +269,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     innerLayout->addLayout(symBtnLayout);
     innerLayout->addWidget(timelineGroup);
+    simContainer->setVisible(false);
     simLayout->addWidget(simContainer);
 
     connect(btnSimular, &QPushButton::clicked, this, &MainWindow::generarSimulador);
@@ -294,6 +304,23 @@ MainWindow::MainWindow(QWidget *parent)
         });
     };
 
+    connect(cbFIFO, &QCheckBox::checkStateChanged, this, [=](int state) {
+        refreshAlgorithms(state, 0);  // 0 = ID for cbFIFO
+    });
+    connect(cbSJF, &QCheckBox::checkStateChanged, this, [=](int state) {
+        refreshAlgorithms(state, 1);  // 1 = ID for cbSJF
+    });
+    connect(cbSRT, &QCheckBox::checkStateChanged, this, [=](int state) {
+        refreshAlgorithms(state, 2);  // 2 = ID for cbSRT
+    });
+    connect(cbRR, &QCheckBox::checkStateChanged, this, [=](int state) {
+        refreshAlgorithms(state, 3);  // 3 = ID for cbRR
+    });
+    connect(cbPriority, &QCheckBox::checkStateChanged, this, [=](int state) {
+        refreshAlgorithms(state, 4);  // 4 = ID for cbPriority
+    });
+
+
     conectarBotonArchivo(btnProcCal, lineProcCal);
     conectarBotonArchivo(btnProcSync, lineProcSync);
     conectarBotonArchivo(btnRecSync, lineRecSync);
@@ -320,6 +347,23 @@ void MainWindow::mostrarAyuda() {
     QMessageBox::information(this, "Ayuda", "Esta aplicación permite simular algoritmos de calendarización y sincronización.");
 }
 
+void MainWindow::refreshAlgorithms(int state, int cbId){
+    QString name = (cbId == 0) ? "FIFO" :
+        (cbId == 1) ? "SJF" :
+        (cbId == 2) ? "SRT" :
+        (cbId == 3) ? "RR" :
+        "Priority";
+
+    if (state == Qt::Checked){
+        activeAlgorithms.append(name);
+        return;
+    } else {
+        activeAlgorithms.erase(std::remove_if(activeAlgorithms.begin(), activeAlgorithms.end(),
+            [name](const QString &s) { return s == name; }),
+            activeAlgorithms.end());
+        return;
+    }
+}
 
 QString MainWindow::readFileContents(const QString &filePath) {
     QFile file(filePath);
@@ -363,17 +407,77 @@ void MainWindow::cambiarModo(int) {}
 void MainWindow::algoritmoSeleccionado() {}
 
 void MainWindow::generarSimulador() {
-    // QString path = lineProcCal->text();
-    // globalProcs = processes(path);
-    // int len = globalProcs.names.length();
-    // for (int i = 0; i<len;i++){
-    //     qDebug() << "Process name:" << globalProcs.names[i]
-    //              << "AT:" << globalProcs.arrivalTime[i]
-    //              << "BT:" << globalProcs.burstTime[i]
-    //              << "Priority:" << globalProcs.priority[i];
-    // }
-    showSim = !showSim;
-    simContainer->setVisible(showSim);
+    errorMsg->setVisible(false);
+    QString path = lineProcCal->text();
+
+    // Error handling
+    if (path.isEmpty()) {
+        errorMsg->setText("Campo \"Procesos (.txt)\" no puede ser vacio!");
+        errorMsg->setVisible(true);
+        showSim = false;
+        simContainer->setVisible(false);
+        return;
+    }
+    int quantum = 0;
+    int len = activeAlgorithms.length();
+    qDebug() << "Active Algorithms have length " << len;
+    for (int i = 0; i<len;i++){
+        qDebug() << "Process name:" << activeAlgorithms[i];
+    }
+    if (activeAlgorithms.isEmpty()){
+        errorMsg->setText("Debe escoger AL MENOS algoritmo para generar el simulador!");
+        errorMsg->setVisible(true);
+        showSim = false;
+        simContainer->setVisible(false);
+        return;
+    }
+
+    if (activeAlgorithms.contains("RR")){
+        if (campoQuantum->text().isEmpty()){
+            errorMsg->setText("Campo \"Quantum\" es REQUERIDO para el algoritmo Round Robin");
+            errorMsg->setVisible(true);
+            showSim = false;
+            simContainer->setVisible(false);
+            return;
+        }
+        bool ok;
+        quantum = campoQuantum->text().toInt(&ok);
+        if(!ok){
+            errorMsg->setText("Campo \"Quantum\" debe ser un ENTERO para el algoritmo Round Robin");
+            errorMsg->setVisible(true);
+            showSim = false;
+            simContainer->setVisible(false);
+            return;
+        }
+        if(quantum <=0){
+            errorMsg->setText("Campo \"Quantum\" debe ser un ENTERO POSITIVO para el algoritmo Round Robin");
+            errorMsg->setVisible(true);
+            showSim = false;
+            simContainer->setVisible(false);
+            return;
+        }
+
+    }
+
+    // No errors raised, show:
+    showSim = true;
+    simContainer->setVisible(true);
+        // Process init
+    globalProcs = processes(path);
+    int len = globalProcs.names.length();
+    for (int i = 0; i<len;i++){
+        qDebug() << "Process name:" << globalProcs.names[i]
+                 << "AT:" << globalProcs.arrivalTime[i]
+                 << "BT:" << globalProcs.burstTime[i]
+                 << "Priority:" << globalProcs.priority[i];
+    }
+
+
+    if(activeAlgorithms.length==1){ // Version con 1 algoritmo elegido
+        if activeAlgorithms.contains("Priority"){ // Priority
+
+        }
+    }
 }
 
 

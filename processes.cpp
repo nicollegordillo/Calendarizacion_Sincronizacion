@@ -15,7 +15,7 @@ processes::processes(const QString &filePath) {
         contents = in.readAll();
     }
     // qDebug() << "Read file contents "<< contents;
-
+    // <PID>, <BT>, <AT>, <Priority>
     // Apply analysis
     QStringList lines = contents.split('\n');
 
