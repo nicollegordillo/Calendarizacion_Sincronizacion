@@ -1,7 +1,7 @@
 #include "scheduler.h"
 #include <climits>
 #include <QDebug>
-scheduler::scheduler(const QString &procPath, int met)
+scheduler::scheduler(const QString &procPath, int met, int q)
     :  finished(false),queue(),timeline(), snapshot(procPath) {
     t = 0;
     if (met >= 0 & met <=4){
@@ -9,12 +9,23 @@ scheduler::scheduler(const QString &procPath, int met)
     } else{
         method = 0;
     }
+    quantum = q;
 }
 
 QString scheduler::getExcecutedName(){
     return snapshot.names[timeline[t-1]];
 }
 
+QString scheduler::getColorByName(QString &name){
+    int id = 0;
+    for (int i = 0; i<snapshot.names.length(); i++){
+        if (snapshot.names[i] == name){
+            id = i;
+            break;
+        }
+    }
+    return snapshot.hexColor[id];
+}
 void scheduler::nextPS(){
     // 0. Stop if finished
     bool bursts_left = false;

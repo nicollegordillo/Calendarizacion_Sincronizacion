@@ -14,6 +14,7 @@ class QGroupBox;
 class QRadioButton;
 class QButtonGroup;
 class QLabel;
+class QHBoxLayout;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -31,6 +32,8 @@ private slots:
     void generarSimulador();
     void refreshAlgorithms(int, int);
     void calcularNextSim();
+    void skipSim();
+    void resetSim();
 
 private:
     void crearInterfaz();
@@ -39,6 +42,7 @@ private:
     scheduler *schedulerSim;
     QWidget *central;
     QCheckBox *modoSwitch;
+    QHBoxLayout *procTimelineLayout;
     QStackedWidget *stackConfiguracion;
     QGroupBox *grupoAlgoritmo;
     QButtonGroup *algoritmoButtons;

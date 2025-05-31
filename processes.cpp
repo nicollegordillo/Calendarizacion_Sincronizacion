@@ -3,9 +3,11 @@
 #include <QFile>
 #include <QTextStream>
 #include <QDebug>
+#include <QRandomGenerator>
+
 processes::processes(const QString &filePath) {
     // Fetch Contents
-    // qDebug() << "Entered processes constructor";
+    qDebug() << "Entered processes constructor";
     QString contents = "";
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
@@ -18,8 +20,9 @@ processes::processes(const QString &filePath) {
     // <PID>, <BT>, <AT>, <Priority>
     // Apply analysis
     QStringList lines = contents.split('\n');
+    int total = lines.length();
 
-    for (int i = 0; i<lines.length();i++){
+    for (int i = 0; i<total;i++){
         QString line = lines[i];
         QStringList tokens = line.split(',');
         if (tokens.length()!= 4){
@@ -40,5 +43,15 @@ processes::processes(const QString &filePath) {
         if (ok){
             // qDebug() << "Priority "<< priority[i] << " for "<<i ;
         };
+        QString color = genColor(i+1, total);
+         qDebug() << "Color" << color;
+        hexColor.append(color);
     }
+    qDebug() << "Exited processes constructor";
+
+}
+
+QString processes::genColor(int index, int total){
+    int hue = (180 * index / total) % 180; // evenly spaced hues
+    return QColor::fromHsv(hue+150, 255, 255).name(); // full saturation & value (brightness)
 }

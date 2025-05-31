@@ -8,8 +8,9 @@
 class scheduler
 {
 public:
-    scheduler(const QString  &, int);
+    scheduler(const QString  &, int, int);
     QString getExcecutedName();
+    QString getColorByName(QString &);
     void nextFIFO();
     void nextSJF();
     void nextSRT();
@@ -23,6 +24,7 @@ public:
         // 4 = Priority / Preemtive Scheduling
 
     int t;
+    int quantum;
     bool finished;
     QVector<int> queue; // Vector of process index in Processes lists
     QVector<int> timeline;

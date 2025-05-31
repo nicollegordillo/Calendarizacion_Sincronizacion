@@ -227,7 +227,7 @@ MainWindow::MainWindow(QWidget *parent)
     btnSimFinish->setIcon(forwardIcon);
     btnSimFinish->setFixedSize(30, 30);
     QPushButton *btnSimRefresh = new QPushButton();
-    QIcon refreshIcon = style()->standardIcon(QStyle::SP_MediaSkipBackward);
+    QIcon refreshIcon = style()->standardIcon(QStyle::SP_BrowserReload);
     btnSimRefresh->setIcon(refreshIcon);
     btnSimRefresh->setFixedSize(30, 30);
     symBtnLayout->addWidget(btnSimNext);
@@ -237,26 +237,8 @@ MainWindow::MainWindow(QWidget *parent)
     QGroupBox *timelineGroup = new QGroupBox("Algoritmo");
 
     QWidget *scrollContent = new QWidget();
-    QHBoxLayout *scrollLayout = new QHBoxLayout(scrollContent);
-    scrollLayout->setAlignment(Qt::AlignLeft);
-
-    QLabel* square1 = new QLabel("P1");
-    square1->setAlignment(Qt::AlignCenter);
-    square1->setFixedSize(40, 40);  // Ensures it's square
-    square1->setStyleSheet(
-        "background-color: #3498db;"   // Any color
-        "border-radius: 10px;"         // Rounded corners
-        );
-    QLabel* square2 = new QLabel("P2");
-    square2->setAlignment(Qt::AlignCenter);
-    square2->setFixedSize(40, 40);  // Ensures it's square
-    square2->setStyleSheet(
-        "background-color: #f54254;"   // Any color
-        "border-radius: 10px;"         // Rounded corners
-        );
-    scrollLayout->addWidget(square1);
-    scrollLayout->addWidget(square2);
-
+    procTimelineLayout = new QHBoxLayout(scrollContent);
+    procTimelineLayout->setAlignment(Qt::AlignLeft);
 
     QScrollArea *scrollArea = new QScrollArea();
 
@@ -328,8 +310,13 @@ MainWindow::MainWindow(QWidget *parent)
     conectarBotonArchivo(btnRecSync, lineRecSync);
     conectarBotonArchivo(btnAccSync, lineAccSync);
 
-
+        // Sim Cal next
     connect(btnSimNext, &QPushButton::clicked, this, &MainWindow::calcularNextSim);
+        // Sim Cal reset
+    connect(btnSimRefresh, &QPushButton::clicked, this, &MainWindow::resetSim);
+        // Sim Cal finish
+    connect(btnSimFinish, &QPushButton::clicked, this, &MainWindow::skipSim);
+
 
     connect(helpButton, &QPushButton::clicked, this, &MainWindow::mostrarAyuda);
     connect(procViewCal, &QPushButton::clicked, this, [=]() {
@@ -474,8 +461,12 @@ void MainWindow::generarSimulador() {
     if(activeAlgorithms.length()==1){ // Version con 1 algoritmo elegido
         if (activeAlgorithms.contains("Priority")){ // Priority
              qDebug() << "Starting Init";
-            schedulerSim = new scheduler(path, 4);
-             qDebug() << "Init Successful";
+            schedulerSim = new scheduler(
+                 path,
+                 4, // Algorithm 4 = Priority
+                 0  // quantum (bien xd)
+            );
+            qDebug() << "Init Successful";
         }
     }
 }
@@ -483,7 +474,18 @@ void MainWindow::generarSimulador() {
 void MainWindow::calcularNextSim() {
     schedulerSim->nextPS();
     if (!schedulerSim->finished){
-        qDebug() << "T:"<< schedulerSim->t << schedulerSim->getExcecutedName();
+        QString name = schedulerSim->getExcecutedName();
+        qDebug() << "T:"<< schedulerSim->t << name;
+        QString col = schedulerSim->getColorByName(name);
+        QLabel* tem = new QLabel(name);
+        tem->setAlignment(Qt::AlignCenter);
+        tem->setFixedSize(40, 40);  // Ensures it's square
+        tem->setStyleSheet(
+            "background-color: "+col+";"   // Any color
+            "border-radius: 10px;"         // Rounded corners
+            );
+        procTimelineLayout->addWidget(tem);
+
     } else {
         qDebug()<<"Finalizo!!";
     }
@@ -491,7 +493,40 @@ void MainWindow::calcularNextSim() {
 }
 
 
+void MainWindow::resetSim() {
+    // Reset Widget
+    QLayoutItem *child;
+    while ((child = procTimelineLayout->takeAt(0)) != nullptr) {
+        if (child->widget()) {
+            delete child->widget();  // Destroys the widget
+        }
+        delete child;  // Deletes the layout item itself
+    }
+    QString path = lineProcCal->text();
+    // Reset scheduler
+    schedulerSim = new scheduler(
+        path,
+        4, // Algorithm 4 = Priority
+        0  // quantum (bien xd)
+    );
+}
 
 
+void MainWindow::skipSim() {
+    schedulerSim->nextPS();
+    while (!schedulerSim->finished){
+        QString name = schedulerSim->getExcecutedName();
+        qDebug() << "T:"<< schedulerSim->t << name;
+        QString col = schedulerSim->getColorByName(name);
+        QLabel* tem = new QLabel(name);
+        tem->setAlignment(Qt::AlignCenter);
+        tem->setFixedSize(40, 40);  // Ensures it's square
+        tem->setStyleSheet(
+            "background-color: "+col+";"   // Any color
+                                         "border-radius: 10px;"         // Rounded corners
+            );
+        procTimelineLayout->addWidget(tem);
 
-
+    }
+    return;
+}
