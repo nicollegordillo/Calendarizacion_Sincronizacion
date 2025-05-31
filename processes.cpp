@@ -28,11 +28,11 @@ processes::processes(const QString &filePath) {
         names.append(tokens[0]);
         // qDebug() << "Name "<< names[i] << " for "<<i ;
         bool ok;
-        arrivalTime.append(tokens[1].toInt(&ok));
+        burstTime.append(tokens[1].toInt(&ok));
         if (ok){
             // qDebug() << "AT "<< arrivalTime[i] << " for "<<i ;
         };
-        burstTime.append(tokens[2].toInt(&ok));
+        arrivalTime.append(tokens[2].toInt(&ok));
         if (ok){
             // qDebug() << "BT "<< burstTime[i] << " for "<<i ;
         };

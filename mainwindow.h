@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <processes.h>
+#include <scheduler.h>
 
 class QStackedWidget;
 class QComboBox;
@@ -29,12 +30,13 @@ private slots:
     void algoritmoSeleccionado();
     void generarSimulador();
     void refreshAlgorithms(int, int);
+    void calcularNextSim();
 
 private:
     void crearInterfaz();
     QVector<QString> activeAlgorithms;
     QVector<QLabel*> labelList;
-    processes globalProcs;
+    scheduler *schedulerSim;
     QWidget *central;
     QCheckBox *modoSwitch;
     QStackedWidget *stackConfiguracion;

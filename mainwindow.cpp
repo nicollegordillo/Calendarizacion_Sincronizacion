@@ -16,7 +16,6 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
-    globalProcs(nullptr),
     showSim(false)
 {
     setFixedSize(600, 600);
@@ -274,6 +273,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(btnSimular, &QPushButton::clicked, this, &MainWindow::generarSimulador);
 
+
+
+
     // --- Conexiones ---
     connect(modoSwitch, &QCheckBox::toggled, [=](bool checked) {
         configStack->setCurrentIndex(checked ? 1 : 0);
@@ -325,6 +327,9 @@ MainWindow::MainWindow(QWidget *parent)
     conectarBotonArchivo(btnProcSync, lineProcSync);
     conectarBotonArchivo(btnRecSync, lineRecSync);
     conectarBotonArchivo(btnAccSync, lineAccSync);
+
+
+    connect(btnSimNext, &QPushButton::clicked, this, &MainWindow::calcularNextSim);
 
     connect(helpButton, &QPushButton::clicked, this, &MainWindow::mostrarAyuda);
     connect(procViewCal, &QPushButton::clicked, this, [=]() {
@@ -422,7 +427,7 @@ void MainWindow::generarSimulador() {
     int len = activeAlgorithms.length();
     qDebug() << "Active Algorithms have length " << len;
     for (int i = 0; i<len;i++){
-        qDebug() << "Process name:" << activeAlgorithms[i];
+        qDebug() << "Chosen Algoritm:" << activeAlgorithms[i];
     }
     if (activeAlgorithms.isEmpty()){
         errorMsg->setText("Debe escoger AL MENOS algoritmo para generar el simulador!");
@@ -463,23 +468,27 @@ void MainWindow::generarSimulador() {
     showSim = true;
     simContainer->setVisible(true);
         // Process init
-    globalProcs = processes(path);
-    int procLen = globalProcs.names.length();
-    for (int i = 0; i<procLen;i++){
-        qDebug() << "Process name:" << globalProcs.names[i]
-                 << "AT:" << globalProcs.arrivalTime[i]
-                 << "BT:" << globalProcs.burstTime[i]
-                 << "Priority:" << globalProcs.priority[i];
-    }
+    qDebug() << "Shown";
 
 
     if(activeAlgorithms.length()==1){ // Version con 1 algoritmo elegido
         if (activeAlgorithms.contains("Priority")){ // Priority
-
+             qDebug() << "Starting Init";
+            schedulerSim = new scheduler(path, 4);
+             qDebug() << "Init Successful";
         }
     }
 }
 
+void MainWindow::calcularNextSim() {
+    schedulerSim->nextPS();
+    if (!schedulerSim->finished){
+        qDebug() << "T:"<< schedulerSim->t << schedulerSim->getExcecutedName();
+    } else {
+        qDebug()<<"Finalizo!!";
+    }
+    return;
+}
 
 
 
