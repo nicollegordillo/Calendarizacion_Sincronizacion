@@ -135,8 +135,67 @@ void scheduler::nextFIFO() {
     t++;
 }
 
-void scheduler::nextSJF(){
+void scheduler::nextSJF() {
+    // 0. Verificar si ya no hay procesos pendientes
+    bool bursts_left = false;
+    for (int i = 0; i < snapshot.names.length(); i++) {
+        if (snapshot.burstTime[i] > 0) {
+            bursts_left = true;
+            break;
+        }
+    }
 
+    if (!bursts_left) {
+        finished = true;
+        return;
+    }
+
+    // 1. Agregar procesos nuevos que hayan llegado en el tiempo actual
+    for (int i = 0; i < snapshot.names.length(); i++) {
+        if (snapshot.arrivalTime[i] == t) {
+            queue.append(i);
+        }
+    }
+
+    // Guardar el proceso actual en ejecución
+    static int current_process = -1;
+    static int remaining_burst = 0;
+
+    if (current_process == -1) {
+        // 2. Seleccionar el proceso con menor burst time
+        int min_burst = INT_MAX;
+        int selected = -1;
+
+        for (int i = 0; i < queue.size(); i++) {
+            int idx = queue[i];
+            if (snapshot.burstTime[idx] < min_burst) {
+                min_burst = snapshot.burstTime[idx];
+                selected = idx;
+            }
+        }
+
+        if (selected != -1) {
+            current_process = selected;
+            remaining_burst = snapshot.burstTime[selected];
+            // Remover de la cola ya que se ejecutará completamente
+            queue.erase(std::remove(queue.begin(), queue.end(), selected), queue.end());
+        }
+    }
+
+    if (current_process != -1) {
+        snapshot.burstTime[current_process]--;
+        remaining_burst--;
+        timeline.append(current_process);
+
+        if (remaining_burst == 0) {
+            current_process = -1;  // Ya terminó
+        }
+    } else {
+        // CPU ociosa
+        timeline.append(-1);
+    }
+
+    t++;
 }
 
 void scheduler::nextSRT(){
