@@ -71,6 +71,8 @@ private:
     QWidget *waitingContent;
     QGroupBox *timelineGroup;
     QGroupBox *syncTimelineGroup;
+    QString procFileCal, procFileSync, recFileSync, accFileSync;
+
 
     
 };

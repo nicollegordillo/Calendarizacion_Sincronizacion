@@ -423,31 +423,102 @@ QString MainWindow::readFileContents(const QString &filePath) {
 }
 void MainWindow::mostrarArchivo(int view_case) {
     QLineEdit* targetLineEdit = nullptr;
-    if (view_case== 0){
+    QString* targetPathVar = nullptr;
+    QString tipoArchivo;
+
+    switch (view_case) {
+    case 0:
         targetLineEdit = lineProcCal;
-    } else if (view_case==1){
+        targetPathVar = &procFileCal;
+        tipoArchivo = "Procesos (Calendarización)";
+        break;
+    case 1:
         targetLineEdit = lineProcSync;
-    } else if (view_case==2){
+        targetPathVar = &procFileSync;
+        tipoArchivo = "Procesos (Sincronización)";
+        break;
+    case 2:
         targetLineEdit = lineRecSync;
-    } else if (view_case==3){
+        targetPathVar = &recFileSync;
+        tipoArchivo = "Recursos";
+        break;
+    case 3:
         targetLineEdit = lineAccSync;
+        targetPathVar = &accFileSync;
+        tipoArchivo = "Acciones";
+        break;
+    default:
+        QMessageBox::warning(this, "Error", "Selección inválida.");
+        return;
     }
-    if (!targetLineEdit) {
-        QMessageBox::information(this, "Contenido de Archivo", "Direccion Vacia");
-    } else {
-        QString path = targetLineEdit->text();
-        QString content = readFileContents(path);
-        Processes Myproc = Processes(path);
-        int len = Myproc.names.length();
-        for (int i = 0; i<len;i++){
-            qDebug() << "Process name:" << Myproc.names[i]
-                     << "AT:" << Myproc.arrivalTime[i]
-                     << "BT:" << Myproc.burstTime[i]
-                     << "Priority:" << Myproc.priority[i];
+
+    if (!targetLineEdit || !targetPathVar) {
+        QMessageBox::warning(this, "Error", "Campo no encontrado.");
+        return;
+    }
+
+    QString path = targetLineEdit->text().trimmed();
+    if (path.isEmpty()) {
+        QMessageBox::information(this, "Archivo vacío", "La ruta del archivo está vacía.");
+        return;
+    }
+
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, "Error", "No se pudo abrir el archivo.");
+        return;
+    }
+
+    QTextStream in(&file);
+    QString rawContent = file.readAll();
+    file.seek(0);  // Volver al inicio si queremos volver a leerlo
+
+    *targetPathVar = path;  // Guardamos la ruta
+
+    QStringList lines = rawContent.split('\n', Qt::SkipEmptyParts);
+    qDebug() << "Archivo:" << tipoArchivo;
+
+    if (view_case == 0 || view_case == 1) {
+        Processes proc(path);
+        for (int i = 0; i < proc.names.size(); ++i) {
+            qDebug() << "PID:" << proc.names[i]
+                     << " AT:" << proc.arrivalTime[i]
+                     << " BT:" << proc.burstTime[i]
+                     << " Priority:" << proc.priority[i]
+                     << " Color:" << proc.hexColor[i];
         }
-        QMessageBox::information(this, "Contenido de Archivo", content);
     }
+    else if (view_case == 2) { // Recursos
+        for (const QString &line : lines) {
+            QStringList tokens = line.split(',', Qt::SkipEmptyParts);
+            if (tokens.size() != 2) {
+                qDebug() << "Línea inválida en archivo de recursos:" << line;
+                continue;
+            }
+            QString nombre = tokens[0].trimmed();
+            int contador = tokens[1].trimmed().toInt();
+            qDebug() << "Recurso:" << nombre << "Contador:" << contador;
+        }
+    }
+    else if (view_case == 3) { // Acciones
+        for (const QString &line : lines) {
+            QStringList tokens = line.split(',', Qt::SkipEmptyParts);
+            if (tokens.size() != 4) {
+                qDebug() << "Línea inválida en archivo de acciones:" << line;
+                continue;
+            }
+            QString pid = tokens[0].trimmed();
+            QString accion = tokens[1].trimmed();
+            QString recurso = tokens[2].trimmed();
+            int ciclo = tokens[3].trimmed().toInt();
+            qDebug() << "PID:" << pid << "Acción:" << accion
+                     << "Recurso:" << recurso << "Ciclo:" << ciclo;
+        }
+    }
+
+    QMessageBox::information(this, tipoArchivo, rawContent);
 }
+
 
 void MainWindow::cambiarModo(int) {}
 
