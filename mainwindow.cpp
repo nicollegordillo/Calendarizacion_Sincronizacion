@@ -801,7 +801,7 @@ void MainWindow::mostrarMetricasFinales() {
 
         for (int j = 0; j < n; ++j) {
             int wt = 0;
-            if (nombre == "FIFO" || nombre == "SJF") {
+            if (nombre == "FIFO" || nombre == "SJF"|| nombre == "Priority") {
                 wt = completion[j] - burst[j];
             } else {
                 wt = completion[j] - arrival[j] - burst[j];
