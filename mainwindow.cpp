@@ -18,7 +18,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
     showSim(false)
 {
-    setFixedSize(600, 600);
+    setFixedSize(800, 800);
     QWidget *central = new QWidget(this);
 
     QVBoxLayout *mainLayout = new QVBoxLayout(central);
@@ -42,7 +42,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     QHBoxLayout *modoLayout = new QHBoxLayout;
     QLabel *labelCal = new QLabel("Calendarización");
-   // QCheckBox *modoSwitch = new QCheckBox;
+    // QCheckBox *modoSwitch = new QCheckBox;
     modoSwitch = new QCheckBox(this);
     QLabel *labelSync = new QLabel("Sincronización");
 
@@ -256,10 +256,10 @@ MainWindow::MainWindow(QWidget *parent)
     symBtnLayout->addWidget(finishedMsg);
 
     QGroupBox *timelineGroup = new QGroupBox("Algoritmo");
-    timelineGroup->setMinimumHeight(100);
+    timelineGroup->setMinimumHeight(490);
     QWidget *scrollContent = new QWidget();
-    procTimelineLayout = new QHBoxLayout(scrollContent);
-    procTimelineLayout->setAlignment(Qt::AlignLeft);
+    procTimelineLayout = new QVBoxLayout(scrollContent);
+    procTimelineLayout->setAlignment(Qt::AlignTop);
 
     QScrollArea *scrollArea = new QScrollArea();
 
@@ -271,7 +271,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     innerLayout->addLayout(symBtnLayout);
     innerLayout->addWidget(timelineGroup);
-    // --- Secciones para sincronización ---
+     // --- Secciones para sincronización ---
     QGroupBox *syncTimelineGroup = new QGroupBox("Sincronización");
     QVBoxLayout *syncTimelineLayout = new QVBoxLayout(syncTimelineGroup);
 
@@ -365,7 +365,7 @@ MainWindow::MainWindow(QWidget *parent)
     conectarBotonArchivo(btnRecSync, lineRecSync);
     conectarBotonArchivo(btnAccSync, lineAccSync);
 
-        // Sim Cal next
+    // Sim Cal next
     connect(btnSimNext, &QPushButton::clicked, this, &MainWindow::calcularNextSim);
         // Sim Cal reset
     connect(btnSimRefresh, &QPushButton::clicked, this, &MainWindow::resetSim);
@@ -396,18 +396,18 @@ void MainWindow::mostrarAyuda() {
 
 void MainWindow::refreshAlgorithms(int state, int cbId){
     QString name = (cbId == 0) ? "FIFO" :
-        (cbId == 1) ? "SJF" :
-        (cbId == 2) ? "SRT" :
-        (cbId == 3) ? "RR" :
-        "Priority";
+                       (cbId == 1) ? "SJF" :
+                       (cbId == 2) ? "SRT" :
+                       (cbId == 3) ? "RR" :
+                       "Priority";
 
     if (state == Qt::Checked){
         activeAlgorithms.append(name);
         return;
     } else {
         activeAlgorithms.erase(std::remove_if(activeAlgorithms.begin(), activeAlgorithms.end(),
-            [name](const QString &s) { return s == name; }),
-            activeAlgorithms.end());
+                                              [name](const QString &s) { return s == name; }),
+                               activeAlgorithms.end());
         return;
     }
 }
@@ -440,10 +440,10 @@ void MainWindow::mostrarArchivo(int view_case) {
         Processes Myproc = Processes(path);
         int len = Myproc.names.length();
         for (int i = 0; i<len;i++){
-             qDebug() << "Process name:" << Myproc.names[i]
-            << "AT:" << Myproc.arrivalTime[i]
-            << "BT:" << Myproc.burstTime[i]
-            << "Priority:" << Myproc.priority[i];
+            qDebug() << "Process name:" << Myproc.names[i]
+                     << "AT:" << Myproc.arrivalTime[i]
+                     << "BT:" << Myproc.burstTime[i]
+                     << "Priority:" << Myproc.priority[i];
         }
         QMessageBox::information(this, "Contenido de Archivo", content);
     }
@@ -542,58 +542,42 @@ void MainWindow::generarSimulador() {
             // Process init
         qDebug() << "Shown";
 
-
-        if(activeAlgorithms.length()==1){ // Version con 1 algoritmo elegido
-            timeLabel->setText("Ciclo Actual: 0");
-            if (activeAlgorithms.contains("FIFO")){ // FIFO
-                schedulerSim = new scheduler(
-                    path,
-                    0, // Algorithm 0 = FIFO
-                    0  // quantum (para default yo digo que se quede en 0 )
-                    );
-                return;
-            }
-            if (activeAlgorithms.contains("SJF")){ // SJF
-                schedulerSim = new scheduler(
-                    path,
-                    1, // Algorithm 4 = SJF
-                    0  // quantum (bien xd)
-                    );
-                return;
-            }
-            if (activeAlgorithms.contains("SRT")){ // SRT
-                qDebug() << "Starting Init";
-                schedulerSim = new scheduler(
-                    path,
-                    2, // Algorithm 4 = Priority
-                    0  // quantum
-                    );
-                qDebug() << "Init Successful";
-                return;
-            }
-            if (activeAlgorithms.contains("RR")){ // RR
-                qDebug() << "Starting Init";
-                schedulerSim = new scheduler(
-                    path,
-                    3, // Algorithm 4 = Priority
-                    quantum  // quantum (hoy si)
-                    );
-                qDebug() << "Init Successful";
-                return;
-            }
-            if (activeAlgorithms.contains("Priority")){ // Priority
-                qDebug() << "Starting Init";
-                schedulerSim = new scheduler(
-                    path,
-                    4, // Algorithm 4 = Priority
-                    0  // quantum
-                    );
-                qDebug() << "Init Successful";
-                return;
-            }
+        // Limpiar simuladores anteriores
+        simuladores.clear();
+        timelines.clear();
+        QLayoutItem* child;
+        while ((child = procTimelineLayout->takeAt(0)) != nullptr) {
+            if (child->widget()) delete child->widget();
+            delete child;
         }
-    }
 
+        for (const QString& alg : activeAlgorithms) {
+            int methodId = (alg == "FIFO") ? 0 :
+                               (alg == "SJF") ? 1 :
+                               (alg == "SRT") ? 2 :
+                               (alg == "RR") ? 3 : 4;
+
+            int q = 0;
+            if (methodId == 3) q = campoQuantum->text().toInt();
+
+            scheduler* s = new scheduler(path, methodId, q);
+            simuladores.append(s);
+
+            // Crear contenedor de título + línea de tiempo
+            QVBoxLayout* vbox = new QVBoxLayout;
+            QLabel* title = new QLabel("Algoritmo: " + alg);
+            QHBoxLayout* line = new QHBoxLayout;
+            line->setAlignment(Qt::AlignLeft);
+            timelines.append(line);
+            QWidget* wrap = new QWidget;
+            wrap->setLayout(line);
+            vbox->addWidget(title);
+            vbox->addWidget(wrap);
+            procTimelineLayout->addLayout(vbox);
+        }
+
+        timeLabel->setText("Ciclo Actual: 0");
+    }
 
 }
 
@@ -618,59 +602,101 @@ void MainWindow::calcularNextSim() {
         }
         return;
     } else {
-        schedulerSim->calculateNext();
-        if (!schedulerSim->finished){
-            timeLabel->setText("Ciclo Actual: "+QString::number(schedulerSim->t));
-            QString name = schedulerSim->getExcecutedName();
-            qDebug() << "T:"<< schedulerSim->t << name;
-            QString col = schedulerSim->getColorByName(name);
-            QLabel* tem = new QLabel(name);
-            tem->setAlignment(Qt::AlignCenter);
-            tem->setFixedSize(40, 40);  // Ensures it's square
-            tem->setStyleSheet(
-                "background-color: "+col+";"   // Any color
-                                             "border-radius: 10px;"         // Rounded corners
-                );
-            procTimelineLayout->addWidget(tem);
+        for (int i = 0; i < simuladores.size(); ++i) {
+            scheduler* s = simuladores[i];
 
-        } else {
+            if (!s->finished) {
+                s->calculateNext();
+
+                //  Solo si aún no terminó, dibujamos
+                if (!s->finished) {
+                    QString name = s->getExcecutedName();
+                    QString col = s->getColorByName(name);
+                    QLabel* tem = new QLabel(name);
+                    tem->setAlignment(Qt::AlignCenter);
+                    tem->setFixedSize(40, 40);
+                    tem->setStyleSheet("background-color: " + col + "; border-radius: 10px;");
+                    timelines[i]->addWidget(tem);
+                }
+            }
+
+        }
+
+        if (!simuladores.isEmpty()) {
+            timeLabel->setText("Ciclo Actual: " + QString::number(simuladores[0]->t));
+        }
+
+        // Revisa si TODOS están terminados después del paso
+        bool allFinished = std::all_of(simuladores.begin(), simuladores.end(),
+                                    [](scheduler* s) { return s->finished; });
+
+        if (allFinished) {
             finishedMsg->setVisible(true);
-            qDebug()<<"Finalizo!!";
         }
         return;
     }
 }
 
-
 void MainWindow::resetSim() {
-    // Reset Widget
+    // Limpiar interfaz visual
     QLayoutItem *child;
     while ((child = procTimelineLayout->takeAt(0)) != nullptr) {
-        if (child->widget()) {
-            delete child->widget();  // Destroys the widget
+        // Si es un layout contenedor (como QVBoxLayout con título + línea de tiempo)
+        if (QLayout *subLayout = child->layout()) {
+            QLayoutItem *subChild;
+            while ((subChild = subLayout->takeAt(0)) != nullptr) {
+                // Puede ser otro layout o un widget (como QLabel de título o procesos)
+                if (QWidget *w = subChild->widget()) {
+                    w->deleteLater();  // elimina QLabel de título o proceso
+                } else if (QLayout *nestedLayout = subChild->layout()) {
+                    QLayoutItem *deepChild;
+                    while ((deepChild = nestedLayout->takeAt(0)) != nullptr) {
+                        if (QWidget *dw = deepChild->widget()) {
+                            dw->deleteLater();  // elimina QLabel de procesos
+                        }
+                        delete deepChild;
+                    }
+                    delete nestedLayout;
+                }
+                delete subChild;
+            }
         }
-        delete child;  // Deletes the layout item itself
+        delete child;
     }
+
+    simuladores.clear();
+    timelines.clear();
+
     generarSimulador();
 }
 
 
 void MainWindow::skipSim() {
-    schedulerSim->calculateNext();
-    while (!schedulerSim->finished){
-        QString name = schedulerSim->getExcecutedName();
-        QString col = schedulerSim->getColorByName(name);
-        QLabel* tem = new QLabel(name);
-        tem->setAlignment(Qt::AlignCenter);
-        tem->setFixedSize(40, 40);  // Ensures it's square
-        tem->setStyleSheet(
-            "background-color: "+col+";"   // Any color
-                                         "border-radius: 10px;"         // Rounded corners
-            );
-        procTimelineLayout->addWidget(tem);
-        schedulerSim->calculateNext();
+    bool anyRemaining = true;
+    while (anyRemaining) {
+        anyRemaining = false;
+        for (int i = 0; i < simuladores.size(); ++i) {
+            scheduler* s = simuladores[i];
+            if (!s->finished) {
+                s->calculateNext();
+
+                // Después de avanzar, verificar si sigue activo
+                if (!s->finished) {
+                    QString name = s->getExcecutedName();
+                    QString col = s->getColorByName(name);
+                    QLabel* tem = new QLabel(name);
+                    tem->setAlignment(Qt::AlignCenter);
+                    tem->setFixedSize(40, 40);
+                    tem->setStyleSheet("background-color: " + col + "; border-radius: 10px;");
+                    timelines[i]->addWidget(tem);
+                    anyRemaining = true;
+                }
+            }
+        }
     }
-    timeLabel->setText("Ciclo Actual: "+QString::number(schedulerSim->t));
+
+    if (!simuladores.isEmpty()) {
+        timeLabel->setText("Ciclo Actual: " + QString::number(simuladores[0]->t));
+    }
     finishedMsg->setVisible(true);
-    return;
 }

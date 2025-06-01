@@ -16,6 +16,7 @@ class QRadioButton;
 class QButtonGroup;
 class QLabel;
 class QHBoxLayout;
+class QVBoxLayout;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -42,10 +43,12 @@ private:
     MutexSync* mutexSim = nullptr;
     QVector<QString> activeAlgorithms;
     QVector<QLabel*> labelList;
-    scheduler *schedulerSim;
+    //scheduler *schedulerSim;
+    QVector<scheduler*> simuladores;
+    QVector<QHBoxLayout*> timelines;
     QWidget *central;
     QCheckBox *modoSwitch;
-    QHBoxLayout *procTimelineLayout;
+    QVBoxLayout *procTimelineLayout;
     QStackedWidget *stackConfiguracion;
     QGroupBox *grupoAlgoritmo;
     QButtonGroup *algoritmoButtons;
@@ -69,7 +72,7 @@ private:
     QGroupBox *timelineGroup;
     QGroupBox *syncTimelineGroup;
 
-
+    
 };
 
 #endif // MAINWINDOW_H
