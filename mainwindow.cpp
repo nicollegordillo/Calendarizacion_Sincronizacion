@@ -782,7 +782,7 @@ void MainWindow::mostrarMetricasFinales() {
 
     for (int i = 0; i < simuladores.size(); ++i) {
         scheduler* s = simuladores[i];
-
+        QString nombre = s->nombre;
         QVector<int> arrival = s->snapshot.arrivalTime;
         QVector<int> burst = s->originalBurstTime;
         QVector<int> completion(arrival.size(), -1);
@@ -798,8 +798,14 @@ void MainWindow::mostrarMetricasFinales() {
 
         // Calcular WT
         double totalWT = 0;
+
         for (int j = 0; j < n; ++j) {
-            int wt = completion[j] - arrival[j] - burst[j];
+            int wt = 0;
+            if (nombre == "FIFO" || nombre == "SJF") {
+                wt = completion[j] - burst[j];
+            } else {
+                wt = completion[j] - arrival[j] - burst[j];
+            }
             totalWT += wt;
         }
 
