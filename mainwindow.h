@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <processes.h>
 #include <scheduler.h>
+#include <mutexsync.h>
 
 class QStackedWidget;
 class QComboBox;
@@ -34,9 +35,11 @@ private slots:
     void calcularNextSim();
     void skipSim();
     void resetSim();
+    void clearLayout(QLayout *layout);
 
 private:
     void crearInterfaz();
+    MutexSync* mutexSim = nullptr;
     QVector<QString> activeAlgorithms;
     QVector<QLabel*> labelList;
     scheduler *schedulerSim;
@@ -59,6 +62,14 @@ private:
     QWidget *simContainer;
     bool showSim;
     bool isSync;
+    QHBoxLayout *accesedTimelineLayout;
+    QHBoxLayout *waitingTimelineLayout;
+    QWidget *accesedContent;
+    QWidget *waitingContent;
+    QGroupBox *timelineGroup;
+    QGroupBox *syncTimelineGroup;
+
+
 };
 
 #endif // MAINWINDOW_H

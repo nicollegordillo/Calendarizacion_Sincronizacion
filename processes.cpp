@@ -5,7 +5,7 @@
 #include <QDebug>
 #include <QRandomGenerator>
 
-processes::processes(const QString &filePath) {
+Processes::Processes(const QString &filePath) {
     // Fetch Contents
     qDebug() << "Entered processes constructor";
     QString contents = "";
@@ -51,7 +51,7 @@ processes::processes(const QString &filePath) {
 
 }
 
-QString processes::genColor(int index, int total) {
+QString Processes::genColor(int index, int total) {
     // Espaciado uniforme sobre todo el espectro (360° HSV)
     int hue = (index * 137) % 360;
 

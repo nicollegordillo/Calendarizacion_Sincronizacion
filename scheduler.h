@@ -3,7 +3,7 @@
 
 #include <QVector>
 #include <QString>
-#include <processes.h>
+#include "processes.h"
 
 class scheduler
 {
@@ -29,7 +29,7 @@ public:
     bool finished;
     QVector<int> queue; // Vector of process index in Processes lists
     QVector<int> timeline;
-    processes snapshot;
+    Processes snapshot;
 };
 
 #endif // SCHEDULER_H

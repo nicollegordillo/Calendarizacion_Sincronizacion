@@ -271,33 +271,70 @@ MainWindow::MainWindow(QWidget *parent)
 
     innerLayout->addLayout(symBtnLayout);
     innerLayout->addWidget(timelineGroup);
+    // --- Secciones para sincronización ---
+    QGroupBox *syncTimelineGroup = new QGroupBox("Sincronización");
+    QVBoxLayout *syncTimelineLayout = new QVBoxLayout(syncTimelineGroup);
+
+    // ACCESED (arriba)
+    accesedContent = new QWidget();
+    accesedTimelineLayout = new QHBoxLayout(accesedContent);
+    accesedTimelineLayout->setAlignment(Qt::AlignLeft);
+    QScrollArea *scrollAccesed = new QScrollArea();
+    scrollAccesed->setWidgetResizable(true);
+    scrollAccesed->setWidget(accesedContent);
+    syncTimelineLayout->addWidget(new QLabel("ACCESED"));
+    syncTimelineLayout->addWidget(scrollAccesed);
+
+    // WAITING (abajo)
+    waitingContent = new QWidget();
+    waitingTimelineLayout = new QHBoxLayout(waitingContent);
+    waitingTimelineLayout->setAlignment(Qt::AlignLeft);
+    QScrollArea *scrollWaiting = new QScrollArea();
+    scrollWaiting->setWidgetResizable(true);
+    scrollWaiting->setWidget(waitingContent);
+    syncTimelineLayout->addWidget(new QLabel("WAITING"));
+    syncTimelineLayout->addWidget(scrollWaiting);
+
+    syncTimelineGroup->setVisible(false);  // Solo se muestra en modo sincronización
+    innerLayout->addWidget(syncTimelineGroup);
+
     simContainer->setVisible(false);
     simLayout->addWidget(simContainer);
 
     connect(btnSimular, &QPushButton::clicked, this, &MainWindow::generarSimulador);
 
     // --- Conexiones ---
-    connect(modoSwitch, &QCheckBox::toggled, [=](bool checked) {
-        configStack->setCurrentIndex(checked ? 1 : 0);
+    connect(modoSwitch, &QCheckBox::stateChanged, this, [=](int){
+        bool isSync = modoSwitch->isChecked();
+        configStack->setCurrentIndex(isSync ? 1 : 0);
 
-        cbFIFO->setVisible(!checked);
-        cbSJF->setVisible(!checked);
-        cbSRT->setVisible(!checked);
-        cbRR->setVisible(!checked);
-        cbPriority->setVisible(!checked);
-        bool mostrarQuantum = !checked && cbRR->isChecked();
+        cbFIFO->setVisible(!isSync);
+        cbSJF->setVisible(!isSync);
+        cbSRT->setVisible(!isSync);
+        cbRR->setVisible(!isSync);
+        cbPriority->setVisible(!isSync);
+        timelineGroup->setVisible(!isSync);
+
+        bool mostrarQuantum = !isSync && cbRR->isChecked();
         quantumLabel->setVisible(mostrarQuantum);
         campoQuantum->setVisible(mostrarQuantum);
-        syncSwitch->setVisible(checked);
-        labelSemaphore->setVisible(checked);
-        labelMutex->setVisible(checked);
+
+        syncSwitch->setVisible(isSync);
+        labelSemaphore->setVisible(isSync);
+        labelMutex->setVisible(isSync);
+
+        syncTimelineGroup->setVisible(isSync); // Esto es clave si estás cambiando el modo
+        finishedMsg->setText(isSync ? "Sincronización Finalizada!" : "Calendarización Finalizada!");
     });
 
-    connect(cbRR, &QCheckBox::toggled, [=](bool checked) {
-        bool mostrarQuantum = checked && !modoSwitch->isChecked();
+
+    connect(cbRR, &QCheckBox::stateChanged, this, [=](int){
+        bool isSync = modoSwitch->isChecked();
+        bool mostrarQuantum = !isSync && cbRR->isChecked();
         campoQuantum->setVisible(mostrarQuantum);
         quantumLabel->setVisible(mostrarQuantum);
     });
+
 
     auto conectarBotonArchivo = [](QPushButton *boton, QLineEdit *destino) {
         QObject::connect(boton, &QPushButton::clicked, [=]() {
@@ -400,7 +437,7 @@ void MainWindow::mostrarArchivo(int view_case) {
     } else {
         QString path = targetLineEdit->text();
         QString content = readFileContents(path);
-        processes Myproc = processes(path);
+        Processes Myproc = Processes(path);
         int len = Myproc.names.length();
         for (int i = 0; i<len;i++){
              qDebug() << "Process name:" << Myproc.names[i]
@@ -416,10 +453,35 @@ void MainWindow::cambiarModo(int) {}
 
 void MainWindow::algoritmoSeleccionado() {}
 
+void MainWindow::clearLayout(QLayout *layout) {
+    while (QLayoutItem* item = layout->takeAt(0)) {
+        if (QWidget* widget = item->widget()) {
+            widget->deleteLater();
+        }
+        delete item;
+    }
+}
+
+
 void MainWindow::generarSimulador() {
     bool isSync = modoSwitch->isChecked();
     if (isSync) {
-        // Modo sincronización
+        QString procPath = lineProcSync->text();
+        QString resPath = lineRecSync->text();
+        QString actPath = lineAccSync->text();
+
+        if (procPath.isEmpty() || resPath.isEmpty() || actPath.isEmpty()) {
+            errorMsg->setText("Todos los campos de archivo son requeridos para el modo de sincronización.");
+            errorMsg->setVisible(true);
+            showSim = false;
+            simContainer->setVisible(false);
+            return;
+        }
+
+        mutexSim = new MutexSync(procPath, resPath, actPath);
+        showSim = true;
+        simContainer->setVisible(true);
+        timeLabel->setText("Ciclo Actual: 0");
     } else {
         errorMsg->setVisible(false);
         finishedMsg->setVisible(false);
@@ -538,7 +600,23 @@ void MainWindow::generarSimulador() {
 void MainWindow::calcularNextSim() {
     bool isSync = modoSwitch->isChecked();
     if (isSync) {
-        // Modo sincronización
+        mutexSim->simulateNext();
+        timeLabel->setText("Ciclo Actual: " + QString::number(mutexSim->currentCycle()));
+
+        for (const auto& pid : mutexSim->processes.keys()) {
+            QString state = mutexSim->getStateForProcess(pid);
+            QString col = (state == "ACCESSED") ? "green" : (state == "WAITING" ? "red" : "gray");
+            QLabel* tem = new QLabel(pid);
+            tem->setAlignment(Qt::AlignCenter);
+            tem->setFixedSize(40, 40);
+            tem->setStyleSheet("background-color: " + col + "; border-radius: 10px;");
+            procTimelineLayout->addWidget(tem);
+        }
+
+        if (mutexSim->finished()) {
+            finishedMsg->setVisible(true);
+        }
+        return;
     } else {
         schedulerSim->calculateNext();
         if (!schedulerSim->finished){

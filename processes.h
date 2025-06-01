@@ -6,10 +6,10 @@
 #include <QString>
 #include <QColor>
 
-class processes
+class Processes
 {
 public:
-    processes(const QString &);
+    Processes(const QString &);
     QVector<QString> names;
     QVector<int> arrivalTime;
     QVector<int> burstTime;
