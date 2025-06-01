@@ -51,7 +51,15 @@ processes::processes(const QString &filePath) {
 
 }
 
-QString processes::genColor(int index, int total){
-    int hue = (180 * index / total) % 180; // evenly spaced hues
-    return QColor::fromHsv(hue+150, 255, 255).name(); // full saturation & value (brightness)
+QString processes::genColor(int index, int total) {
+    // Espaciado uniforme sobre todo el espectro (360° HSV)
+    int hue = (index * 137) % 360;
+
+    // Para evitar agrupaciones similares, variar saturación o valor un poco
+    int sat = 200 + ((index * 37) % 56);  // entre 200 y 255
+    int val = 220 + ((index * 53) % 36);  // entre 220 y 255
+
+    QColor color = QColor::fromHsv(hue, sat, val);
+    return color.name();
 }
+
