@@ -644,7 +644,10 @@ void MainWindow::generarSimulador() {
             wrap->setLayout(line);
             vbox->addWidget(title);
             vbox->addWidget(wrap);
-            procTimelineLayout->addLayout(vbox);
+            // Envolver el vbox en un QWidget contenedor
+            QWidget* container = new QWidget;
+            container->setLayout(vbox);
+            procTimelineLayout->addWidget(container);
         }
 
         timeLabel->setText("Ciclo Actual: 0");
@@ -709,30 +712,12 @@ void MainWindow::calcularNextSim() {
 }
 
 void MainWindow::resetSim() {
-    // Limpiar interfaz visual
-    QLayoutItem *child;
-    while ((child = procTimelineLayout->takeAt(0)) != nullptr) {
-        // Si es un layout contenedor (como QVBoxLayout con título + línea de tiempo)
-        if (QLayout *subLayout = child->layout()) {
-            QLayoutItem *subChild;
-            while ((subChild = subLayout->takeAt(0)) != nullptr) {
-                // Puede ser otro layout o un widget (como QLabel de título o procesos)
-                if (QWidget *w = subChild->widget()) {
-                    w->deleteLater();  // elimina QLabel de título o proceso
-                } else if (QLayout *nestedLayout = subChild->layout()) {
-                    QLayoutItem *deepChild;
-                    while ((deepChild = nestedLayout->takeAt(0)) != nullptr) {
-                        if (QWidget *dw = deepChild->widget()) {
-                            dw->deleteLater();  // elimina QLabel de procesos
-                        }
-                        delete deepChild;
-                    }
-                    delete nestedLayout;
-                }
-                delete subChild;
-            }
+    QLayoutItem* item;
+    while ((item = procTimelineLayout->takeAt(0)) != nullptr) {
+        if (QWidget* w = item->widget()) {
+            delete w;  //  usa delete, NO deleteLater
         }
-        delete child;
+        delete item;
     }
 
     simuladores.clear();
