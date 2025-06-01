@@ -58,6 +58,7 @@ private:
     QPushButton *botonGenerar;
     QWidget *simContainer;
     bool showSim;
+    bool isSync;
 };
 
 #endif // MAINWINDOW_H

@@ -42,7 +42,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     QHBoxLayout *modoLayout = new QHBoxLayout;
     QLabel *labelCal = new QLabel("Calendarización");
-    QCheckBox *modoSwitch = new QCheckBox;
+   // QCheckBox *modoSwitch = new QCheckBox;
+    modoSwitch = new QCheckBox(this);
     QLabel *labelSync = new QLabel("Sincronización");
 
     modoSwitch->setChecked(false);
@@ -416,138 +417,150 @@ void MainWindow::cambiarModo(int) {}
 void MainWindow::algoritmoSeleccionado() {}
 
 void MainWindow::generarSimulador() {
-    errorMsg->setVisible(false);
-    finishedMsg->setVisible(false);
-    QString path = lineProcCal->text();
+    bool isSync = modoSwitch->isChecked();
+    if (isSync) {
+        // Modo sincronización
+    } else {
+        errorMsg->setVisible(false);
+        finishedMsg->setVisible(false);
+        QString path = lineProcCal->text();
 
-    // Error handling
-    if (path.isEmpty()) {
-        errorMsg->setText("Campo \"Procesos (.txt)\" no puede ser vacio!");
-        errorMsg->setVisible(true);
-        showSim = false;
-        simContainer->setVisible(false);
-        return;
-    }
-    int quantum = 0;
-    int len = activeAlgorithms.length();
-    qDebug() << "Active Algorithms have length " << len;
-    for (int i = 0; i<len;i++){
-        qDebug() << "Chosen Algoritm:" << activeAlgorithms[i];
-    }
-    if (activeAlgorithms.isEmpty()){
-        errorMsg->setText("Debe escoger AL MENOS algoritmo para generar el simulador!");
-        errorMsg->setVisible(true);
-        showSim = false;
-        simContainer->setVisible(false);
-        return;
-    }
-
-    if (activeAlgorithms.contains("RR")){
-        if (campoQuantum->text().isEmpty()){
-            errorMsg->setText("Campo \"Quantum\" es REQUERIDO para el algoritmo Round Robin");
+        // Error handling
+        if (path.isEmpty()) {
+            errorMsg->setText("Campo \"Procesos (.txt)\" no puede ser vacio!");
             errorMsg->setVisible(true);
             showSim = false;
             simContainer->setVisible(false);
             return;
         }
-        bool ok;
-        quantum = campoQuantum->text().toInt(&ok);
-        if(!ok){
-            errorMsg->setText("Campo \"Quantum\" debe ser un ENTERO para el algoritmo Round Robin");
-            errorMsg->setVisible(true);
-            showSim = false;
-            simContainer->setVisible(false);
-            return;
+        int quantum = 0;
+        int len = activeAlgorithms.length();
+        qDebug() << "Active Algorithms have length " << len;
+        for (int i = 0; i<len;i++){
+            qDebug() << "Chosen Algoritm:" << activeAlgorithms[i];
         }
-        if(quantum <=0){
-            errorMsg->setText("Campo \"Quantum\" debe ser un ENTERO POSITIVO para el algoritmo Round Robin");
+        if (activeAlgorithms.isEmpty()){
+            errorMsg->setText("Debe escoger AL MENOS algoritmo para generar el simulador!");
             errorMsg->setVisible(true);
             showSim = false;
             simContainer->setVisible(false);
             return;
         }
 
+        if (activeAlgorithms.contains("RR")){
+            if (campoQuantum->text().isEmpty()){
+                errorMsg->setText("Campo \"Quantum\" es REQUERIDO para el algoritmo Round Robin");
+                errorMsg->setVisible(true);
+                showSim = false;
+                simContainer->setVisible(false);
+                return;
+            }
+            bool ok;
+            quantum = campoQuantum->text().toInt(&ok);
+            if(!ok){
+                errorMsg->setText("Campo \"Quantum\" debe ser un ENTERO para el algoritmo Round Robin");
+                errorMsg->setVisible(true);
+                showSim = false;
+                simContainer->setVisible(false);
+                return;
+            }
+            if(quantum <=0){
+                errorMsg->setText("Campo \"Quantum\" debe ser un ENTERO POSITIVO para el algoritmo Round Robin");
+                errorMsg->setVisible(true);
+                showSim = false;
+                simContainer->setVisible(false);
+                return;
+            }
+
+        }
+
+        // No errors raised, show:
+        showSim = true;
+        simContainer->setVisible(true);
+            // Process init
+        qDebug() << "Shown";
+
+
+        if(activeAlgorithms.length()==1){ // Version con 1 algoritmo elegido
+            timeLabel->setText("Ciclo Actual: 0");
+            if (activeAlgorithms.contains("FIFO")){ // FIFO
+                schedulerSim = new scheduler(
+                    path,
+                    0, // Algorithm 0 = FIFO
+                    0  // quantum (para default yo digo que se quede en 0 )
+                    );
+                return;
+            }
+            if (activeAlgorithms.contains("SJF")){ // SJF
+                schedulerSim = new scheduler(
+                    path,
+                    1, // Algorithm 4 = SJF
+                    0  // quantum (bien xd)
+                    );
+                return;
+            }
+            if (activeAlgorithms.contains("SRT")){ // SRT
+                qDebug() << "Starting Init";
+                schedulerSim = new scheduler(
+                    path,
+                    2, // Algorithm 4 = Priority
+                    0  // quantum
+                    );
+                qDebug() << "Init Successful";
+                return;
+            }
+            if (activeAlgorithms.contains("RR")){ // RR
+                qDebug() << "Starting Init";
+                schedulerSim = new scheduler(
+                    path,
+                    3, // Algorithm 4 = Priority
+                    quantum  // quantum (hoy si)
+                    );
+                qDebug() << "Init Successful";
+                return;
+            }
+            if (activeAlgorithms.contains("Priority")){ // Priority
+                qDebug() << "Starting Init";
+                schedulerSim = new scheduler(
+                    path,
+                    4, // Algorithm 4 = Priority
+                    0  // quantum
+                    );
+                qDebug() << "Init Successful";
+                return;
+            }
+        }
     }
 
-    // No errors raised, show:
-    showSim = true;
-    simContainer->setVisible(true);
-        // Process init
-    qDebug() << "Shown";
 
-
-    if(activeAlgorithms.length()==1){ // Version con 1 algoritmo elegido
-        timeLabel->setText("Ciclo Actual: 0");
-        if (activeAlgorithms.contains("FIFO")){ // FIFO
-            schedulerSim = new scheduler(
-                path,
-                0, // Algorithm 0 = FIFO
-                0  // quantum (para default yo digo que se quede en 0 )
-                );
-            return;
-        }
-        if (activeAlgorithms.contains("SJF")){ // SJF
-            schedulerSim = new scheduler(
-                path,
-                1, // Algorithm 4 = SJF
-                0  // quantum (bien xd)
-                );
-            return;
-        }
-        if (activeAlgorithms.contains("SRT")){ // SRT
-            qDebug() << "Starting Init";
-            schedulerSim = new scheduler(
-                path,
-                2, // Algorithm 4 = Priority
-                0  // quantum
-                );
-            qDebug() << "Init Successful";
-            return;
-        }
-        if (activeAlgorithms.contains("RR")){ // RR
-            qDebug() << "Starting Init";
-            schedulerSim = new scheduler(
-                path,
-                3, // Algorithm 4 = Priority
-                quantum  // quantum (hoy si)
-                );
-            qDebug() << "Init Successful";
-            return;
-        }
-        if (activeAlgorithms.contains("Priority")){ // Priority
-            qDebug() << "Starting Init";
-            schedulerSim = new scheduler(
-                 path,
-                 4, // Algorithm 4 = Priority
-                 0  // quantum
-            );
-            qDebug() << "Init Successful";
-            return;
-        }
-    }
 }
 
 void MainWindow::calcularNextSim() {
-    schedulerSim->calculateNext();
-    if (!schedulerSim->finished){
-        timeLabel->setText("Ciclo Actual: "+QString::number(schedulerSim->t));
-        QString name = schedulerSim->getExcecutedName();
-        qDebug() << "T:"<< schedulerSim->t << name;
-        QString col = schedulerSim->getColorByName(name);
-        QLabel* tem = new QLabel(name);
-        tem->setAlignment(Qt::AlignCenter);
-        tem->setFixedSize(40, 40);  // Ensures it's square
-        tem->setStyleSheet(
-            "background-color: "+col+";"   // Any color
-            "border-radius: 10px;"         // Rounded corners
-            );
-        procTimelineLayout->addWidget(tem);
-
+    bool isSync = modoSwitch->isChecked();
+    if (isSync) {
+        // Modo sincronización
     } else {
-        finishedMsg->setVisible(true);
-        qDebug()<<"Finalizo!!";
+        schedulerSim->calculateNext();
+        if (!schedulerSim->finished){
+            timeLabel->setText("Ciclo Actual: "+QString::number(schedulerSim->t));
+            QString name = schedulerSim->getExcecutedName();
+            qDebug() << "T:"<< schedulerSim->t << name;
+            QString col = schedulerSim->getColorByName(name);
+            QLabel* tem = new QLabel(name);
+            tem->setAlignment(Qt::AlignCenter);
+            tem->setFixedSize(40, 40);  // Ensures it's square
+            tem->setStyleSheet(
+                "background-color: "+col+";"   // Any color
+                                             "border-radius: 10px;"         // Rounded corners
+                );
+            procTimelineLayout->addWidget(tem);
+
+        } else {
+            finishedMsg->setVisible(true);
+            qDebug()<<"Finalizo!!";
+        }
+        return;
     }
-    return;
 }
 
 
