@@ -36,6 +36,7 @@ private slots:
     void calcularNextSim();
     void skipSim();
     void resetSim();
+    void mostrarMetricasFinales();
     void clearLayout(QLayout *layout);
 
 private:

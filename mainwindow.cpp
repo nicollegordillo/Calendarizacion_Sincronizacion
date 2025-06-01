@@ -13,6 +13,7 @@
 #include <QMessageBox>
 #include <QComboBox>
 #include <QScrollArea>
+#include <QCoreApplication>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
@@ -632,6 +633,7 @@ void MainWindow::generarSimulador() {
             if (methodId == 3) q = campoQuantum->text().toInt();
 
             scheduler* s = new scheduler(path, methodId, q);
+            s->nombre = alg;
             simuladores.append(s);
 
             // Crear contenedor de título + línea de tiempo
@@ -706,6 +708,7 @@ void MainWindow::calcularNextSim() {
 
         if (allFinished) {
             finishedMsg->setVisible(true);
+            mostrarMetricasFinales();
         }
         return;
     }
@@ -755,4 +758,61 @@ void MainWindow::skipSim() {
         timeLabel->setText("Ciclo Actual: " + QString::number(simuladores[0]->t));
     }
     finishedMsg->setVisible(true);
+    mostrarMetricasFinales();
 }
+
+#include <QFile>
+#include <QTextStream>
+#include <QMessageBox>
+
+void MainWindow::mostrarMetricasFinales() {
+    QString projectDir = QCoreApplication::applicationDirPath();  // Ruta del ejecutable
+    QFile file(projectDir + "/../../../Metricas_Calendarizacion.txt"); // En la raiz del proyecto
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, "Error", "No se pudo crear el archivo de métricas.");
+        return;
+    }
+
+    QTextStream out(&file);
+    out << "╔═══════════════════════════════════════╗\n";
+    out << "║      Métricas Finales de Algoritmos   ║\n";
+    out << "╠════════════════════════╦══════════════╣\n";
+    out << "║ Algoritmo              ║  Avg. WT     ║\n";
+    out << "╠════════════════════════╬══════════════╣\n";
+
+    for (int i = 0; i < simuladores.size(); ++i) {
+        scheduler* s = simuladores[i];
+
+        QVector<int> arrival = s->snapshot.arrivalTime;
+        QVector<int> burst = s->originalBurstTime;
+        QVector<int> completion(arrival.size(), -1);
+        int n = arrival.size();
+
+        // Obtener CT (Completion Time)
+        for (int t = 0; t < s->timeline.size(); ++t) {
+            int pid = s->timeline[t];
+            if (pid != -1) {
+                completion[pid] = t + 1;
+            }
+        }
+
+        // Calcular WT
+        double totalWT = 0;
+        for (int j = 0; j < n; ++j) {
+            int wt = completion[j] - arrival[j] - burst[j];
+            totalWT += wt;
+        }
+
+        double avgWT = totalWT / n;
+
+        out << QString("║%1║ %2 ║\n")
+                   .arg(s->nombre.left(24), -24)
+                   .arg(QString::number(avgWT, 'f', 2), -12);
+    }
+
+    out << "╚════════════════════════╩══════════════╝\n";
+    file.close();
+
+    QMessageBox::information(this, "Métricas guardadas", "Archivo 'Metricas_Calendarizacion.txt' generado exitosamente.");
+}
+

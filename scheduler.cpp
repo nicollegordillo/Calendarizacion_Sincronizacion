@@ -3,6 +3,7 @@
 #include <QDebug>
 scheduler::scheduler(const QString &procPath, int met, int q)
     :  finished(false),queue(),timeline(), snapshot(procPath) {
+    originalBurstTime = snapshot.burstTime;
     t = 0;
     if (met >= 0 & met <=4){
         method = met;

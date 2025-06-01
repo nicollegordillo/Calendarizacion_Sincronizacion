@@ -11,6 +11,7 @@ public:
     scheduler(const QString  &, int, int);
     QString getExcecutedName();
     QString getColorByName(QString &);
+    QString nombre;
     void calculateNext();
     void nextFIFO();
     void nextSJF();
@@ -29,6 +30,7 @@ public:
     bool finished;
     QVector<int> queue; // Vector of process index in Processes lists
     QVector<int> timeline;
+    QVector<int> originalBurstTime;
     Processes snapshot;
 };
 
