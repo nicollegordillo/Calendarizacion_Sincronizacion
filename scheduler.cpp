@@ -95,8 +95,44 @@ void scheduler::nextPS(){
     t++;
 }
 
-void scheduler::nextFIFO(){
+void scheduler::nextFIFO() {
+    // 0. Verificar si ya no hay procesos pendientes
+    bool bursts_left = false;
+    for (int i = 0; i < snapshot.names.length(); i++) {
+        if (snapshot.burstTime[i] > 0) {
+            bursts_left = true;
+            break;
+        }
+    }
 
+    if (!bursts_left) {
+        finished = true;
+        return;
+    }
+
+    // 1. Agregar procesos nuevos que hayan llegado en el tiempo actual
+    for (int i = 0; i < snapshot.names.length(); i++) {
+        if (snapshot.arrivalTime[i] == t) {
+            queue.append(i);
+        }
+    }
+
+    // 2. Ejecutar el proceso al frente de la cola
+    if (!queue.isEmpty()) {
+        int current = queue.front();
+        snapshot.burstTime[current] -= 1;
+        timeline.append(current);
+
+        // Si terminó su ráfaga, quitarlo de la cola
+        if (snapshot.burstTime[current] == 0) {
+            queue.removeFirst();
+        }
+    } else {
+        // CPU ociosa
+        timeline.append(-1);
+    }
+
+    t++;
 }
 
 void scheduler::nextSJF(){
