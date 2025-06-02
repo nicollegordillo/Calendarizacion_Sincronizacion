@@ -665,12 +665,58 @@ void MainWindow::calcularNextSim() {
 
         for (const auto& pid : mutexSim->processes.keys()) {
             QString state = mutexSim->getStateForProcess(pid);
-            QString col = (state == "ACCESSED") ? "green" : (state == "WAITING" ? "red" : "gray");
-            QLabel* tem = new QLabel(pid);
+            QString resource = mutexSim->getResourceForProcess(pid);
+            QString action = mutexSim->getActionTypeForProcess(pid);
+            QString color = mutexSim->processes[pid]; // Usa el color definido
+
+            QLabel* tem = new QLabel(pid + "->" + resource + "\n" + action);
             tem->setAlignment(Qt::AlignCenter);
-            tem->setFixedSize(40, 40);
-            tem->setStyleSheet("background-color: " + col + "; border-radius: 10px;");
-            procTimelineLayout->addWidget(tem);
+            tem->setFixedSize(60, 40);
+            tem->setStyleSheet("background-color: " + color + "; border-radius: 10px;");
+
+            // Si no existen las timelines aún, créalas
+            if (!timelineMapAccessed.contains(pid)) {
+                // Línea para ACCESSED
+                QHBoxLayout* accTimeline = new QHBoxLayout;
+                accTimeline->setAlignment(Qt::AlignLeft);
+                accesedTimelineLayout->addLayout(accTimeline);
+
+                // Línea para WAITING
+                QHBoxLayout* waitTimeline = new QHBoxLayout;
+                waitTimeline->setAlignment(Qt::AlignLeft);
+                waitingTimelineLayout->addLayout(waitTimeline);
+
+                // Guardar referencias
+                timelineMapAccessed[pid] = accTimeline;
+                timelineMapWaiting[pid] = waitTimeline;
+            }
+
+
+            // Limpia los widgets anteriores (1 por ciclo)
+            QLayoutItem* item;
+            // Elimina widgets en ambas líneas del ciclo actual
+            auto removeAtCycle = [&](QHBoxLayout* layout, int index) {
+                if (index < layout->count()) {
+                    QLayoutItem* item = layout->itemAt(index);
+                    if (item) {
+                        QWidget* w = item->widget();
+                        if (w) w->deleteLater();
+                        layout->removeItem(item);
+                        delete item;
+                    }
+                }
+            };
+
+            removeAtCycle(timelineMapAccessed[pid], mutexSim->currentCycle());
+            removeAtCycle(timelineMapWaiting[pid], mutexSim->currentCycle());
+
+
+            // Agrega el nuevo estado
+            if (state == "ACCESSED") {
+                timelineMapAccessed[pid]->addWidget(tem);
+            } else if (state == "WAITING") {
+                timelineMapWaiting[pid]->addWidget(tem);
+            }
         }
 
         if (mutexSim->finished()) {

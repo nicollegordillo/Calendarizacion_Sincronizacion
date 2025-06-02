@@ -27,10 +27,14 @@ public:
 
     QString getStateForProcess(const QString &pid) const;
     QMap<QString, QString> processes; // pid → color
+    QString getResourceForProcess(const QString& pid) const;
+    QString getActionTypeForProcess(const QString& pid) const;
+
 
 private:
     int cycle;
     int maxCycle;
+    QVector<Action> pendingActions;
 
     Resources resources;
     Actions actions;
@@ -41,6 +45,11 @@ private:
     struct ProcState {
         QString state;    // "WAITING", "ACCESSED", "IDLE"
         QString resource; // recurso que está usando o intentando usar
+        QString type;
+
+        ProcState(const QString& s = "IDLE", const QString& r = "", const QString& t = "")
+            : state(s), resource(r), type(t) {}
+
     };
 
     QMap<QString, ProcState> procStates; // estado de cada proceso

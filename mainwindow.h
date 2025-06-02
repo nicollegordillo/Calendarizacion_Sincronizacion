@@ -73,6 +73,9 @@ private:
     QGroupBox *timelineGroup;
     QGroupBox *syncTimelineGroup;
     QString procFileCal, procFileSync, recFileSync, accFileSync;
+    QMap<QString, QHBoxLayout*> timelineMap;
+    QMap<QString, QHBoxLayout*> timelineMapAccessed;
+    QMap<QString, QHBoxLayout*> timelineMapWaiting;
 
 
     

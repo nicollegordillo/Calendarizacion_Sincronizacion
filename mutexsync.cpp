@@ -2,66 +2,114 @@
 #include <QDebug>
 
 MutexSync::MutexSync(const QString &procFile, const QString &resFile, const QString &actFile)
-    : cycle(0), maxCycle(0),
+    : cycle(-1), maxCycle(0),
     resources(resFile),
     actions(actFile),
-    proc(procFile) // Aquí sí o sí debes inicializar 'proc'
+    proc(procFile)
 {
-    // Ya dentro de la clase, puedes usar 'proc' directamente
+    pendingActions = actions.actionsList;
+
     for (int i = 0; i < proc.names.size(); ++i) {
         QString pid = proc.names[i];
         processes[pid] = proc.hexColor[i];
-        procStates[pid] = {"IDLE", ""};
+        procStates[pid] = {"IDLE", "", ""};
     }
 
-    // Calcular el ciclo máximo según las acciones
-    for (const auto &action : actions.actionsList) {
-        if (action.cycle > maxCycle) {
-            maxCycle = action.cycle;
-        }
+    for (const auto& a : actions.actionsList) {
+        if (a.cycle > maxCycle)
+            maxCycle = a.cycle;
     }
 }
-
 
 void MutexSync::simulateNext() {
-    if (cycle > maxCycle) return;
+    if (finished()) return;
+    cycle++;
 
-    // Procesar acciones del ciclo actual
-    for (const auto &a : actions.actionsList) {
-        if (a.cycle == cycle) {
-            QString pid = a.pid;
-            QString resource = a.resource;
-
-            if (lockedResources.contains(resource)) {
-                // Recurso bloqueado
-                procStates[pid] = {"WAITING", resource};
-            } else {
-                // Recurso libre: accede y lo bloquea
-                lockedResources.insert(resource);
-                procStates[pid] = {"ACCESSED", resource};
-            }
-        }
-    }
-
-    // Liberar recursos que se accedieron en el ciclo anterior
+    // 1. Liberar recursos usados en el ciclo anterior
+    QSet<QString> liberados;
     for (auto it = procStates.begin(); it != procStates.end(); ++it) {
         if (it.value().state == "ACCESSED") {
-            lockedResources.remove(it.value().resource);
-            it.value() = {"IDLE", ""};
-        } else if (it.value().state == "WAITING") {
-            it.value().state = "IDLE"; // volver a intentar en el siguiente ciclo
+            liberados.insert(it.value().resource);
+        }
+    }
+    for (const auto& res : liberados) {
+        lockedResources.remove(res);
+    }
+
+    // 2. Eliminar procesos que accedieron o estaban esperando (para reintentar sus acciones)
+    for (auto it = procStates.begin(); it != procStates.end(); ) {
+        if (it.value().state == "ACCESSED" || it.value().state == "WAITING") {
+            it = procStates.erase(it);
+        } else {
+            ++it;
         }
     }
 
-    cycle++;
+    // 3. Procesar primero acciones en espera (pendientes de ciclos anteriores)
+    QVector<Action> nuevosPendientes;
+    QSet<QString> procesadosEsteCiclo;
+
+    for (const auto& action : pendingActions) {
+        if (action.cycle > cycle) {
+            nuevosPendientes.append(action); // todavía no es su turno
+            continue;
+        }
+
+        QString pid = action.pid;
+        QString resource = action.resource;
+        QString type = action.action;
+
+        if (procesadosEsteCiclo.contains(pid)) continue;
+
+        if (!lockedResources.contains(resource)) {
+            lockedResources.insert(resource);
+            procStates[pid] = {"ACCESSED", resource, type};
+            procesadosEsteCiclo.insert(pid);
+        } else {
+            nuevosPendientes.append(action);
+            procStates[pid] = {"WAITING", resource, type};
+        }
+    }
+
+    // 4. Procesar nuevas acciones del ciclo actual
+    for (const auto& action : actions.actionsList) {
+        if (action.cycle != cycle) continue;
+
+        QString pid = action.pid;
+        QString resource = action.resource;
+        QString type = action.action;
+
+        if (procesadosEsteCiclo.contains(pid)) continue;
+
+        if (!lockedResources.contains(resource)) {
+            lockedResources.insert(resource);
+            procStates[pid] = {"ACCESSED", resource, type};
+            procesadosEsteCiclo.insert(pid);
+        } else {
+            nuevosPendientes.append(action);
+            procStates[pid] = {"WAITING", resource, type};
+        }
+    }
+
+    // 5. Guardar las acciones pendientes que siguen sin ejecutarse
+    pendingActions = nuevosPendientes;
+
+    for (auto it = procStates.begin(); it != procStates.end(); ++it) {
+        qDebug() << "Ciclo" << cycle
+                 << "- PID:" << it.key()
+                 << "- Estado:" << it.value().state
+                 << "- Recurso:" << it.value().resource
+                 << "- Acción:" << it.value().type;
+    }
 }
+
 
 int MutexSync::currentCycle() const {
     return cycle;
 }
 
 bool MutexSync::finished() const {
-    return cycle > maxCycle;
+    return cycle > maxCycle && pendingActions.isEmpty();
 }
 
 QString MutexSync::getStateForProcess(const QString &pid) const {
@@ -70,4 +118,20 @@ QString MutexSync::getStateForProcess(const QString &pid) const {
     }
     return "IDLE";
 }
+
+QString MutexSync::getResourceForProcess(const QString& pid) const {
+    if (procStates.contains(pid)) {
+        return procStates[pid].resource;
+    }
+    return "";
+}
+
+QString MutexSync::getActionTypeForProcess(const QString& pid) const {
+    if (procStates.contains(pid)) {
+        return procStates[pid].type;
+    }
+    return "";
+}
+
+
 
