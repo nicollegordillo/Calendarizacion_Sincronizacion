@@ -812,6 +812,7 @@ void MainWindow::skipSim() {
 #include <QMessageBox>
 
 void MainWindow::mostrarMetricasFinales() {
+    QString metricasFinales; // Variable que guarda para el messageBox
     QString projectDir = QCoreApplication::applicationDirPath();  // Ruta del ejecutable
     QFile file(projectDir + "/../../../Metricas_Calendarizacion.txt"); // En la raiz del proyecto
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -856,6 +857,9 @@ void MainWindow::mostrarMetricasFinales() {
         }
 
         double avgWT = totalWT / n;
+        metricasFinales += QString("Algoritmo: %1\nAvg WT: %2\n\n")
+                               .arg(s->nombre)
+                               .arg(QString::number(avgWT, 'f', 2));
 
         out << QString("║%1║ %2 ║\n")
                    .arg(s->nombre.left(24), -24)
@@ -864,7 +868,7 @@ void MainWindow::mostrarMetricasFinales() {
 
     out << "╚════════════════════════╩══════════════╝\n";
     file.close();
-
+    QMessageBox::information(this, "Métricas Finales", metricasFinales);
     QMessageBox::information(this, "Métricas guardadas", "Archivo 'Metricas_Calendarizacion.txt' generado exitosamente.");
 }
 
