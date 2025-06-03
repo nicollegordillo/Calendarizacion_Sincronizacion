@@ -28,6 +28,7 @@ public:
     int t;
     int quantum;
     bool finished;
+    bool initializedSJF = false;
     QVector<int> queue; // Vector of process index in Processes lists
     QVector<int> timeline;
     QVector<int> originalBurstTime;

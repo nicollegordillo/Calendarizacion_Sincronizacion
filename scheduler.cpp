@@ -151,11 +151,12 @@ void scheduler::nextSJF() {
         return;
     }
 
-    // 1. Agregar procesos nuevos que hayan llegado en el tiempo actual
-    for (int i = 0; i < snapshot.names.length(); i++) {
-        if (snapshot.arrivalTime[i] == t) {
+    // 1. Inicializar la cola de procesos. 
+    if (!initializedSJF) {
+        for (int i = 0; i < snapshot.names.length(); i++) {
             queue.append(i);
         }
+        initializedSJF = true;
     }
 
     // Guardar el proceso actual en ejecución
