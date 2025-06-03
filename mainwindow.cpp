@@ -19,7 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
     showSim(false)
 {
-    setFixedSize(800, 800);
+    setFixedSize(1000, 900);
     QWidget *central = new QWidget(this);
 
     QVBoxLayout *mainLayout = new QVBoxLayout(central);
@@ -257,10 +257,16 @@ MainWindow::MainWindow(QWidget *parent)
     symBtnLayout->addWidget(finishedMsg);
 
     QGroupBox *timelineGroup = new QGroupBox("Algoritmo");
-    timelineGroup->setMinimumHeight(490);
+    timelineGroup->setMinimumHeight(580);
     QWidget *scrollContent = new QWidget();
     procTimelineLayout = new QVBoxLayout(scrollContent);
     procTimelineLayout->setAlignment(Qt::AlignTop);
+
+    // --- Métricas ---
+    metricasBox = new QGroupBox("Métricas de simulación");
+    metricasBox->setVisible(false);
+    metricasLayout = new QVBoxLayout(metricasBox);
+    innerLayout->addWidget(metricasBox);
 
     QScrollArea *scrollArea = new QScrollArea();
 
@@ -771,7 +777,7 @@ void MainWindow::resetSim() {
 
     simuladores.clear();
     timelines.clear();
-
+    metricasBox->setVisible(false);
     generarSimulador();
 }
 
@@ -812,30 +818,20 @@ void MainWindow::skipSim() {
 #include <QMessageBox>
 
 void MainWindow::mostrarMetricasFinales() {
-    QString metricasFinales; // Variable que guarda para el messageBox
-    QString projectDir = QCoreApplication::applicationDirPath();  // Ruta del ejecutable
-    QFile file(projectDir + "/../../../Metricas_Calendarizacion.txt"); // En la raiz del proyecto
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QMessageBox::warning(this, "Error", "No se pudo crear el archivo de métricas.");
-        return;
+    QLayoutItem* item;
+    while ((item = metricasLayout->takeAt(0)) != nullptr) {
+        if (item->widget()) delete item->widget();
+        delete item;
     }
 
-    QTextStream out(&file);
-    out << "╔═══════════════════════════════════════╗\n";
-    out << "║      Métricas Finales de Algoritmos   ║\n";
-    out << "╠════════════════════════╦══════════════╣\n";
-    out << "║ Algoritmo              ║  Avg. WT     ║\n";
-    out << "╠════════════════════════╬══════════════╣\n";
-
+    // Mostrar nuevas métricas
     for (int i = 0; i < simuladores.size(); ++i) {
         scheduler* s = simuladores[i];
-        QString nombre = s->nombre;
         QVector<int> arrival = s->snapshot.arrivalTime;
         QVector<int> burst = s->originalBurstTime;
         QVector<int> completion(arrival.size(), -1);
         int n = arrival.size();
 
-        // Obtener CT (Completion Time)
         for (int t = 0; t < s->timeline.size(); ++t) {
             int pid = s->timeline[t];
             if (pid != -1) {
@@ -843,12 +839,10 @@ void MainWindow::mostrarMetricasFinales() {
             }
         }
 
-        // Calcular WT
         double totalWT = 0;
-
         for (int j = 0; j < n; ++j) {
             int wt = 0;
-            if (nombre == "FIFO" || nombre == "SJF"|| nombre == "Priority") {
+            if (s->nombre == "FIFO" || s->nombre == "SJF" || s->nombre == "Priority") {
                 wt = completion[j] - burst[j];
             } else {
                 wt = completion[j] - arrival[j] - burst[j];
@@ -857,18 +851,15 @@ void MainWindow::mostrarMetricasFinales() {
         }
 
         double avgWT = totalWT / n;
-        metricasFinales += QString("Algoritmo: %1\nAvg WT: %2\n\n")
-                               .arg(s->nombre)
-                               .arg(QString::number(avgWT, 'f', 2));
 
-        out << QString("║%1║ %2 ║\n")
-                   .arg(s->nombre.left(24), -24)
-                   .arg(QString::number(avgWT, 'f', 2), -12);
+        QLabel* metricLabel = new QLabel(
+            QString("Algoritmo: %1 | Avg. WT: %2")
+                .arg(s->nombre)
+                .arg(QString::number(avgWT, 'f', 2))
+            );
+        metricasLayout->addWidget(metricLabel);
     }
+    metricasBox->setVisible(true);
 
-    out << "╚════════════════════════╩══════════════╝\n";
-    file.close();
-    QMessageBox::information(this, "Métricas Finales", metricasFinales);
-    QMessageBox::information(this, "Métricas guardadas", "Archivo 'Metricas_Calendarizacion.txt' generado exitosamente.");
 }
 

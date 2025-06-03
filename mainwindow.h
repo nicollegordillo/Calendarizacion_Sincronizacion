@@ -72,6 +72,8 @@ private:
     QWidget *waitingContent;
     QGroupBox *timelineGroup;
     QGroupBox *syncTimelineGroup;
+    QGroupBox *metricasBox;
+    QVBoxLayout *metricasLayout;
     QString procFileCal, procFileSync, recFileSync, accFileSync;
     QMap<QString, QHBoxLayout*> timelineMap;
     QMap<QString, QHBoxLayout*> timelineMapAccessed;
