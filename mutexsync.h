@@ -35,6 +35,8 @@ private:
     int cycle;
     int maxCycle;
     QVector<Action> pendingActions;
+    QSet<QString> accionesEjecutadas;
+
 
     Resources resources;
     Actions actions;

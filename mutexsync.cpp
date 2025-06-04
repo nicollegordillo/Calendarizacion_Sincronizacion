@@ -58,13 +58,16 @@ void MutexSync::simulateNext() {
         QString pid = action.pid;
         QString resource = action.resource;
         QString type = action.action;
+        QString idAccion = pid + "|" + resource + "|" + QString::number(action.cycle);
 
+        if (accionesEjecutadas.contains(idAccion)) continue;
         if (procesadosEsteCiclo.contains(pid)) continue;
 
         if (!lockedResources.contains(resource)) {
             lockedResources.insert(resource);
             procStates[pid] = {"ACCESSED", resource, type};
             procesadosEsteCiclo.insert(pid);
+            accionesEjecutadas.insert(idAccion);
         } else {
             nuevosPendientes.append(action);
             procStates[pid] = {"WAITING", resource, type};
@@ -78,13 +81,16 @@ void MutexSync::simulateNext() {
         QString pid = action.pid;
         QString resource = action.resource;
         QString type = action.action;
+        QString idAccion = pid + "|" + resource + "|" + type + "|" + QString::number(action.cycle);
 
+        if (accionesEjecutadas.contains(idAccion)) continue;
         if (procesadosEsteCiclo.contains(pid)) continue;
 
         if (!lockedResources.contains(resource)) {
             lockedResources.insert(resource);
             procStates[pid] = {"ACCESSED", resource, type};
             procesadosEsteCiclo.insert(pid);
+            accionesEjecutadas.insert(idAccion);
         } else {
             nuevosPendientes.append(action);
             procStates[pid] = {"WAITING", resource, type};
@@ -103,13 +109,12 @@ void MutexSync::simulateNext() {
     }
 }
 
-
 int MutexSync::currentCycle() const {
     return cycle;
 }
 
 bool MutexSync::finished() const {
-    return cycle > maxCycle && pendingActions.isEmpty();
+    return pendingActions.isEmpty() && procStates.isEmpty();
 }
 
 QString MutexSync::getStateForProcess(const QString &pid) const {
