@@ -333,6 +333,9 @@ MainWindow::MainWindow(QWidget *parent)
         cbPriority->setVisible(!isSync);
         timelineGroup->setVisible(!isSync);
 
+        btnSimFinish->setVisible(!isSync);   // Visibilidad del boton de adelantar
+        btnSimRefresh->setVisible(!isSync);  // Visibilidad del boton de reiniciar
+
         bool mostrarQuantum = !isSync && cbRR->isChecked();
         quantumLabel->setVisible(mostrarQuantum);
         campoQuantum->setVisible(mostrarQuantum);
