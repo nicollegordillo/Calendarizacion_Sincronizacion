@@ -9,7 +9,8 @@ SOURCES += \
     mutexsync.cpp \
     processes.cpp \
     resources.cpp \
-    scheduler.cpp
+    scheduler.cpp \
+    semaphore.cpp
 
 HEADERS += \
     actions.h \
@@ -17,4 +18,5 @@ HEADERS += \
     mutexsync.h \
     processes.h \
     resources.h \
-    scheduler.h
+    scheduler.h \
+    semaphore.h

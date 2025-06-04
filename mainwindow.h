@@ -5,6 +5,7 @@
 #include <processes.h>
 #include <scheduler.h>
 #include <mutexsync.h>
+#include <semaphore.h>
 
 class QStackedWidget;
 class QComboBox;
@@ -42,6 +43,7 @@ private slots:
 private:
     void crearInterfaz();
     MutexSync* mutexSim = nullptr;
+    Semaphore* semaphoreSim = nullptr;
     QVector<QString> activeAlgorithms;
     QVector<QLabel*> labelList;
     //scheduler *schedulerSim;
@@ -49,6 +51,7 @@ private:
     QVector<QHBoxLayout*> timelines;
     QWidget *central;
     QCheckBox *modoSwitch;
+    QCheckBox *syncSwitch;
     QVBoxLayout *procTimelineLayout;
     QStackedWidget *stackConfiguracion;
     QGroupBox *grupoAlgoritmo;

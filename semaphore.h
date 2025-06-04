@@ -22,18 +22,25 @@ public:
     void simulateNext();
     int currentCycle() const;
     bool finished() const;
+    QVector<QString> procesosEnCicloActual() const;
+
 
     QString getStateForProcess(const QString &pid) const;
     QMap<QString, QString> processes; // pid → color
     QString getResourceForProcess(const QString& pid) const;
     QString getActionTypeForProcess(const QString& pid) const;
+    QMap<QString, QMap<int, QString>> timelineStates;     // PID -> ciclo -> estado
+    QMap<QString, QMap<int, QString>> timelineResources;  // PID -> ciclo -> recurso
+    QMap<QString, QMap<int, QString>> timelineActions;    // PID -> ciclo -> tipo de acción
 private:
     int cycle;
     int maxCycle;
+    bool modoExplicito;  // true si es acquire/release, false si es read/write
     QVector<Action> pendingActions;
     QSet<QString> accionesEjecutadas;
     Resources resources;
     Actions actions;
+    QVector<QString> ordenProcesados;
 
     // Aquí “proc” es una instancia de tu clase processes:
     Processes proc;
