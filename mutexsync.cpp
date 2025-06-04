@@ -9,15 +9,21 @@ MutexSync::MutexSync(const QString &procFile, const QString &resFile, const QStr
 {
     pendingActions = actions.actionsList;
 
-    for (int i = 0; i < proc.names.size(); ++i) {
-        QString pid = proc.names[i];
-        processes[pid] = proc.hexColor[i];
-        procStates[pid] = {"IDLE", "", ""};
-    }
-
+    // 1. Identificar procesos activos (que aparecen en el archivo de acciones)
+    QSet<QString> procesosActivos;
     for (const auto& a : actions.actionsList) {
+        procesosActivos.insert(a.pid);
         if (a.cycle > maxCycle)
             maxCycle = a.cycle;
+    }
+
+    // 2. Registrar solo los procesos activos
+    for (int i = 0; i < proc.names.size(); ++i) {
+        QString pid = proc.names[i];
+        if (procesosActivos.contains(pid)) {
+            processes[pid] = proc.hexColor[i];
+            procStates[pid] = {"IDLE", "", ""};
+        }
     }
 }
 
