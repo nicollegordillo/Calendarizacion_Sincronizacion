@@ -24,11 +24,15 @@ public:
     void simulateNext();
     int currentCycle() const;
     bool finished() const;
+    QVector<QString> procesosEnCicloActual() const;
 
     QString getStateForProcess(const QString &pid) const;
     QMap<QString, QString> processes; // pid → color
     QString getResourceForProcess(const QString& pid) const;
     QString getActionTypeForProcess(const QString& pid) const;
+    QMap<QString, QMap<int, QString>> timelineStates;     // PID -> ciclo -> estado
+    QMap<QString, QMap<int, QString>> timelineResources;  // PID -> ciclo -> recurso
+    QMap<QString, QMap<int, QString>> timelineActions;    // PID -> ciclo -> tipo de acción
 
 
 private:
@@ -36,6 +40,10 @@ private:
     int maxCycle;
     QVector<Action> pendingActions;
     QSet<QString> accionesEjecutadas;
+    QVector<QString> ordenProcesados;
+    bool modoExplicito;  // true si es acquire/release, false si es read/write
+
+    QMap<QString, QSet<QString>> heldResources; // PID → recursos adquiridos
 
 
     Resources resources;

@@ -273,40 +273,51 @@ MainWindow::MainWindow(QWidget *parent)
     scrollArea->setWidgetResizable(true);
     scrollArea->setWidget(scrollContent);
 
-    QVBoxLayout *timelineLayout = new QVBoxLayout(timelineGroup);
+    timelineLayout = new QHBoxLayout(timelineGroup);
+    timelineLayout->setAlignment(Qt::AlignTop);
+
     timelineLayout->addWidget(scrollArea);
 
     innerLayout->addLayout(symBtnLayout);
     innerLayout->addWidget(timelineGroup);
-     // --- Secciones para sincronización ---
+    // --- Secciones para sincronización ---
     QGroupBox *syncTimelineGroup = new QGroupBox("Sincronización");
     QVBoxLayout *syncTimelineLayout = new QVBoxLayout(syncTimelineGroup);
 
-    // ACCESED (arriba)
-    accesedContent = new QWidget();
-    accesedTimelineLayout = new QHBoxLayout(accesedContent);
-    accesedTimelineLayout->setAlignment(Qt::AlignLeft);
-    QScrollArea *scrollAccesed = new QScrollArea();
-    scrollAccesed->setWidgetResizable(true);
-    scrollAccesed->setWidget(accesedContent);
-    syncTimelineLayout->addWidget(new QLabel("ACCESED"));
-    syncTimelineLayout->addWidget(scrollAccesed);
+    // → Envolver cicloLabelsLayout + timelineLayout en verticalTimelineWrap
+    QVBoxLayout* verticalTimelineWrap = new QVBoxLayout;
 
-    // WAITING (abajo)
-    waitingContent = new QWidget();
-    waitingTimelineLayout = new QHBoxLayout(waitingContent);
-    waitingTimelineLayout->setAlignment(Qt::AlignLeft);
-    QScrollArea *scrollWaiting = new QScrollArea();
-    scrollWaiting->setWidgetResizable(true);
-    scrollWaiting->setWidget(waitingContent);
-    syncTimelineLayout->addWidget(new QLabel("WAITING"));
-    syncTimelineLayout->addWidget(scrollWaiting);
+    // Layout superior con etiquetas de ciclos
+    cicloLabelsLayout = new QHBoxLayout;
+    cicloLabelsLayout->setAlignment(Qt::AlignLeft);
+    verticalTimelineWrap->addLayout(cicloLabelsLayout);
+
+    // Línea de tiempo única para sincronización
+    timelineLayout = new QHBoxLayout();  // columnas de cada ciclo
+    timelineLayout->setAlignment(Qt::AlignLeft);
+    timelineLayout->setContentsMargins(10, 10, 10, 10);
+
+    // Contenedor visual que tendrá tanto las etiquetas de ciclo como la línea de tiempo
+    QWidget* syncContent = new QWidget();
+    syncContent->setLayout(verticalTimelineWrap); // ← aquí está la clave
+    verticalTimelineWrap->addLayout(timelineLayout);
+
+    QScrollArea *scrollTimeline = new QScrollArea();
+    scrollTimeline->setWidgetResizable(true);
+    scrollTimeline->setWidget(syncContent);
+
+    syncContent->setMinimumHeight(300);
+    scrollTimeline->setMinimumHeight(300);
+
+    syncTimelineLayout->addWidget(new QLabel("Línea de tiempo"));
+    syncTimelineLayout->addWidget(scrollTimeline);
 
     syncTimelineGroup->setVisible(false);  // Solo se muestra en modo sincronización
     innerLayout->addWidget(syncTimelineGroup);
 
     simContainer->setVisible(false);
     simLayout->addWidget(simContainer);
+
 
     connect(btnSimular, &QPushButton::clicked, this, &MainWindow::generarSimulador);
 
@@ -560,6 +571,24 @@ void MainWindow::generarSimulador() {
         showSim = true;
         simContainer->setVisible(true);
         timeLabel->setText("Ciclo Actual: 0");
+        // Limpiar layouts de sincronización si existen
+        QLayoutItem* child;
+        while ((child = cicloLabelsLayout->takeAt(0)) != nullptr) {
+            if (child->widget()) delete child->widget();
+            delete child;
+        }
+        while ((child = timelineLayout->takeAt(0)) != nullptr) {
+            if (child->layout()) {
+                QLayoutItem* subchild;
+                while ((subchild = child->layout()->takeAt(0)) != nullptr) {
+                    if (subchild->widget()) delete subchild->widget();
+                    delete subchild;
+                }
+                delete child->layout();
+            }
+            delete child;
+        }
+
     } else {
         errorMsg->setVisible(false);
         finishedMsg->setVisible(false);
@@ -666,64 +695,54 @@ void MainWindow::generarSimulador() {
 void MainWindow::calcularNextSim() {
     bool isSync = modoSwitch->isChecked();
     if (isSync) {
-        mutexSim->simulateNext();
-        timeLabel->setText("Ciclo Actual: " + QString::number(mutexSim->currentCycle()));
-
-        for (const auto& pid : mutexSim->processes.keys()) {
-            QString state = mutexSim->getStateForProcess(pid);
-            QString resource = mutexSim->getResourceForProcess(pid);
-            QString action = mutexSim->getActionTypeForProcess(pid);
-            QString color = mutexSim->processes[pid]; // Usa el color definido
-
-            QLabel* tem = new QLabel(pid + "->" + resource + "\n" + action);
-            tem->setAlignment(Qt::AlignCenter);
-            tem->setFixedSize(60, 40);
-            tem->setStyleSheet("background-color: " + color + "; border-radius: 10px;");
-
-            // Si no existen las timelines aún, créalas
-            if (!timelineMapAccessed.contains(pid)) {
-                // Línea para ACCESSED
-                QHBoxLayout* accTimeline = new QHBoxLayout;
-                accTimeline->setAlignment(Qt::AlignLeft);
-                accesedTimelineLayout->addLayout(accTimeline);
-
-                // Línea para WAITING
-                QHBoxLayout* waitTimeline = new QHBoxLayout;
-                waitTimeline->setAlignment(Qt::AlignLeft);
-                waitingTimelineLayout->addLayout(waitTimeline);
-
-                // Guardar referencias
-                timelineMapAccessed[pid] = accTimeline;
-                timelineMapWaiting[pid] = waitTimeline;
-            }
-
-
-            // Limpia los widgets anteriores (1 por ciclo)
-            QLayoutItem* item;
-            // Elimina widgets en ambas líneas del ciclo actual
-            auto removeAtCycle = [&](QHBoxLayout* layout, int index) {
-                if (index < layout->count()) {
-                    QLayoutItem* item = layout->itemAt(index);
-                    if (item) {
-                        QWidget* w = item->widget();
-                        if (w) w->deleteLater();
-                        layout->removeItem(item);
-                        delete item;
-                    }
-                }
-            };
-
-            removeAtCycle(timelineMapAccessed[pid], mutexSim->currentCycle());
-            removeAtCycle(timelineMapWaiting[pid], mutexSim->currentCycle());
-
-
-            // Agrega el nuevo estado
-            if (state == "ACCESSED") {
-                timelineMapAccessed[pid]->addWidget(tem);
-            } else if (state == "WAITING") {
-                timelineMapWaiting[pid]->addWidget(tem);
-            }
+        if (mutexSim->finished()) {
+            finishedMsg->setVisible(true);
+            return;
         }
+        mutexSim->simulateNext();
+        int cicloActual = mutexSim->currentCycle();
+        timeLabel->setText("Ciclo Actual: " + QString::number(cicloActual));
+
+        // Crear columna nueva para el ciclo actual
+        QVBoxLayout* columnaCiclo = new QVBoxLayout;
+        columnaCiclo->setAlignment(Qt::AlignTop);
+        // Crear etiqueta de ciclo alineada a la izquierda
+        QLabel* cicloLabel = new QLabel(QString::number(cicloActual));
+        cicloLabel->setFixedSize(60, 20);
+        cicloLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop); // ← Aquí está la clave
+        cicloLabelsLayout->addWidget(cicloLabel);
+        // Obtener orden de procesos que participaron en el ciclo
+        QVector<QString> ordenProceso = mutexSim->procesosEnCicloActual();
+        for (const QString& pid : ordenProceso) {
+            QString state = mutexSim->timelineStates[pid].value(cicloActual, "IDLE");
+            QString resource = mutexSim->timelineResources[pid].value(cicloActual, "");
+            QString action = mutexSim->timelineActions[pid].value(cicloActual, "");
+            QString color = mutexSim->processes[pid];
+            if (state == "WAITING") {
+                color = "#B0B0B0";
+            }
+
+            QLabel* label = new QLabel(pid + "->" + resource + "\n" + action);
+            label->setAlignment(Qt::AlignCenter);
+            label->setFixedSize(60, 40);
+            label->setStyleSheet("background-color: " + color + "; border-radius: 10px;");
+
+            // Agregar el proceso a la columna del ciclo actual
+            columnaCiclo->addWidget(label);
+        }
+
+        // Si ningún proceso fue afectado en el ciclo, mostrar "IDLE"
+        if (ordenProceso.isEmpty()) {
+            QLabel* label = new QLabel("IDLE");
+            label->setAlignment(Qt::AlignCenter);
+            label->setFixedSize(60, 40);
+            columnaCiclo->addWidget(label);
+        }
+
+        // Agregar la columna a la línea de tiempo principal
+        timelineLayout->addLayout(columnaCiclo);
+        timelinePorCiclo.append(columnaCiclo);
+
 
         if (mutexSim->finished()) {
             finishedMsg->setVisible(true);
