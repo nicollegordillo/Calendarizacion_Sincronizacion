@@ -78,9 +78,10 @@ private:
     QMap<QString, QHBoxLayout*> timelineMap;
     QMap<QString, QHBoxLayout*> timelineMapAccessed;
     QMap<QString, QHBoxLayout*> timelineMapWaiting;
-
-
-    
+    QHBoxLayout *timelineLayout;
+    QVector<QVBoxLayout*> timelinePorCiclo;
+    QWidget *syncContent;
+    QHBoxLayout* cicloLabelsLayout;
 };
 
 #endif // MAINWINDOW_H
