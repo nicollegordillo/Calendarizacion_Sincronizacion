@@ -66,11 +66,12 @@ void scheduler::nextPS(){
     }
     // 1. Agregar procesos nuevos
     // qDebug() << "T" << t;
-    for (int i = 0; i<snapshot.names.length(); i++){
-        if(snapshot.arrivalTime[i]==t){
-            // qDebug() << "At" << t << "Came " << snapshot.names[i];
+    if (!initPS){
+        for (int i = 0; i<snapshot.names.length(); i++){
+                // qDebug() << "At" << t << "Came " << snapshot.names[i];
             queue.append(i);
         }
+        initPS = true;
     }
 
     int min = INT_MAX;

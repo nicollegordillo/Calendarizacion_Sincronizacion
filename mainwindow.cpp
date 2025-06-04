@@ -19,7 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
     showSim(false)
 {
-    setFixedSize(1000, 900);
+    // setFixedSize(1000, 900);
     QWidget *central = new QWidget(this);
 
     QVBoxLayout *mainLayout = new QVBoxLayout(central);
