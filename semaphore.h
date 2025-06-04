@@ -44,15 +44,14 @@ private:
 
     // Aquí “proc” es una instancia de tu clase processes:
     Processes proc;
+    QMap<QPair<QString, QString>, bool> has_resource;
 
     struct ProcState {
         QString state;    // "WAITING", "ACCESSED", "IDLE"
         QString resource; // recurso que está usando o intentando usar
         QString type;
-        int sem_counter;
-
-        ProcState(const QString& s = "IDLE", const QString& r = "", const QString& t = "", int c = 1)
-            : state(s), resource(r), type(t), sem_counter(c){}
+        ProcState(const QString& s = "IDLE", const QString& r = "", const QString& t = "")
+            : state(s), resource(r), type(t){}
 
     };
 

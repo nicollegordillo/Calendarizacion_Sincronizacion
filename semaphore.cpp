@@ -6,7 +6,8 @@ Semaphore::Semaphore(const QString &procFile, const QString &resFile, const QStr
     : cycle(-1), maxCycle(0),
     resources(resFile),
     actions(actFile),
-    proc(procFile)
+    proc(procFile),
+    has_resource()
 {
     pendingActions = actions.actionsList;
 
@@ -62,9 +63,15 @@ void Semaphore::simulateNext() {
                 qDebug() <<resource<<"now"<<sem_count;
 
                 if (sem_count>=0){  // liberar explícitamente si semaforo lo indica
+                    QPair<QString, QString> key(pid, resource);
                     lockedResources.remove(resource);
                     accionesEjecutadas.insert(idAccion);
-                    procStates[pid] = {"IDLE", resource, "signal"};
+                    if (has_resource[key]){
+                        has_resource[key] = false;
+                    }
+                    procStates[pid].state = "IDLE";
+                    procStates[pid].resource = resource;
+                    procStates[pid].type = "signal";
                     procesadosEsteCiclo.insert(pid);
                     if (!ordenProcesados.contains(pid)) ordenProcesados.append(pid);
                 }
@@ -91,12 +98,24 @@ void Semaphore::simulateNext() {
 
             if (accionesEjecutadas.contains(idAccion)) continue;
             if (procesadosEsteCiclo.contains(pid)) continue;
+            QPair<QString, QString> key(pid, resource);
 
-            if (sem_count>0) {
-                qDebug() << pid << "Accessed "<< resource << "found sem at " << sem_count << "now its" << sem_count-1;
-                lockedResources.insert(resource);
-                resources.resourceCount[resource]-=1;
-                procStates[pid] = {"ACCESSED", resource, type, sem_count-1};
+            qDebug() << cycle << pid << "has" << has_resource << "to" << resource;
+            if (sem_count>0 |  has_resource[key]) {
+
+                if (! has_resource[key]){
+                    qDebug() << pid << "Accessed "<< resource << "found sem at " << sem_count << "now its" << sem_count-1;
+                    lockedResources.insert(resource);
+                    resources.resourceCount[resource]-=1;
+
+                } else {
+                    qDebug() << pid << "Accessed "<< resource << "(it already had access)" << sem_count;
+                }
+                procStates[pid].state = "ACCESSED";
+                procStates[pid].resource = resource;
+                procStates[pid].type = type;
+                has_resource[key] = true;
+                qDebug() << cycle << pid << "has" << has_resource[key] << "to" << resource;
                 procesadosEsteCiclo.insert(pid);
                 accionesEjecutadas.insert(idAccion);
                 if (!ordenProcesados.contains(pid)) ordenProcesados.append(pid);
@@ -197,14 +216,19 @@ void Semaphore::simulateNext() {
                 qDebug() << pid << "Accessed "<< resource << "found sem at " << sem_count << "now its" << sem_count-1;
                 lockedResources.insert(resource);
                 resources.resourceCount[resource]-=1;
-                procStates[pid] = {"ACCESSED", resource, type, sem_count-1};
+
+                procStates[pid].state = "ACCESSED";
+                procStates[pid].resource = resource;
+                procStates[pid].type = type;
                 procesadosEsteCiclo.insert(pid);
                 accionesEjecutadas.insert(idAccion);
                  if (!ordenProcesados.contains(pid)) ordenProcesados.append(pid);
             } else{
                 qDebug() << pid << "waiting for "<< resource << "found sem at " << sem_count;
                 nuevosPendientes.append(action);
-                procStates[pid] = {"WAITING", resource, type, sem_count};
+                procStates[pid].state = "WAITING";
+                procStates[pid].resource = resource;
+                procStates[pid].type = type;
                  if (!ordenProcesados.contains(pid)) ordenProcesados.append(pid);
             }
         }
@@ -227,14 +251,23 @@ void Semaphore::simulateNext() {
                 qDebug() << pid << "Accessed "<< resource << "found sem at " << sem_count << "now its" << sem_count-1;
                 resources.resourceCount[pid]-=1;
                 lockedResources.insert(resource);
-                procStates[pid] = {"ACCESSED", resource, type, sem_count-1};
+
+                procStates[pid].state = "ACCESSED";
+                procStates[pid].resource = resource;
+                procStates[pid].type = type;
+
+
                 procesadosEsteCiclo.insert(pid);
                 accionesEjecutadas.insert(idAccion);
                 if (!ordenProcesados.contains(pid)) ordenProcesados.append(pid);
             } else {
                 qDebug() << pid << "waiting for "<< resource << "found sem at " << sem_count;
                 nuevosPendientes.append(action);
-                procStates[pid] = {"WAITING", resource, type, sem_count};
+
+                procStates[pid].state = "WAITING";
+                procStates[pid].resource = resource;
+                procStates[pid].type = type;
+
                 if (!ordenProcesados.contains(pid)) ordenProcesados.append(pid);
             }
         }
