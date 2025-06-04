@@ -39,6 +39,7 @@ private slots:
     void resetSim();
     void mostrarMetricasFinales();
     void clearLayout(QLayout *layout);
+    void limpiarTimelinesSincronizacion();
 
 private:
     void crearInterfaz();

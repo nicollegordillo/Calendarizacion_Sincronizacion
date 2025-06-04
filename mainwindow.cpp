@@ -551,12 +551,63 @@ void MainWindow::clearLayout(QLayout *layout) {
     }
 }
 
+void MainWindow::limpiarTimelinesSincronizacion() {
+    qDebug() << "Entrando a limpiarTimelinesSincronizacion()";
+
+    if (cicloLabelsLayout) {
+        qDebug() << "Eliminando cicloLabelsLayout";
+        QLayoutItem* child;
+        while ((child = cicloLabelsLayout->takeAt(0)) != nullptr) {
+            if (QWidget* w = child->widget()) {
+                w->deleteLater();
+            }
+            delete child;
+        }
+    }
+
+    if (timelineLayout) {
+        qDebug() << "Eliminando timelineLayout (solo vaciando, sin borrar layouts)";
+        QLayoutItem* child;
+        while ((child = timelineLayout->takeAt(0)) != nullptr) {
+            if (QWidget* w = child->widget()) {
+                w->deleteLater();
+            } else if (QLayout* layout = child->layout()) {
+                QLayoutItem* subchild;
+                while ((subchild = layout->takeAt(0)) != nullptr) {
+                    if (QWidget* sw = subchild->widget()) {
+                        sw->deleteLater();
+                    }
+                    delete subchild;
+                }
+
+            }
+            delete child;
+        }
+    }
+
+
+    if (semaphoreSim) {
+        qDebug() << "Eliminando simuladores";
+        delete semaphoreSim;
+        semaphoreSim = nullptr;
+    }
+
+    if (mutexSim) {
+        qDebug() << "Eliminando simuladores";
+        delete mutexSim;
+        mutexSim = nullptr;
+    }
+}
+
 
 void MainWindow::generarSimulador() {
     bool isSync = modoSwitch->isChecked();
     if (isSync) {
+        errorMsg->setVisible(false);
+        finishedMsg->setVisible(false);
         bool isSemaphore = syncSwitch->isChecked();
         if (isSemaphore){
+
             QString procPath = lineProcSync->text();
             QString resPath = lineRecSync->text();
             QString actPath = lineAccSync->text();
@@ -568,29 +619,15 @@ void MainWindow::generarSimulador() {
                 simContainer->setVisible(false);
                 return;
             }
-
+            limpiarTimelinesSincronizacion();
             semaphoreSim = new Semaphore(procPath, resPath, actPath);
             showSim = true;
             simContainer->setVisible(true);
             timeLabel->setText("Ciclo Actual: 0");
             // Limpiar layouts de sincronización si existen
-            QLayoutItem* child;
-            while ((child = cicloLabelsLayout->takeAt(0)) != nullptr) {
-                if (child->widget()) delete child->widget();
-                delete child;
-            }
-            while ((child = timelineLayout->takeAt(0)) != nullptr) {
-                if (child->layout()) {
-                    QLayoutItem* subchild;
-                    while ((subchild = child->layout()->takeAt(0)) != nullptr) {
-                        if (subchild->widget()) delete subchild->widget();
-                        delete subchild;
-                    }
-                    delete child->layout();
-                }
-                delete child;
-            }
+
         } else {
+
             QString procPath = lineProcSync->text();
             QString resPath = lineRecSync->text();
             QString actPath = lineAccSync->text();
@@ -602,28 +639,12 @@ void MainWindow::generarSimulador() {
                 simContainer->setVisible(false);
                 return;
             }
-
+            limpiarTimelinesSincronizacion();
             mutexSim = new MutexSync(procPath, resPath, actPath);
             showSim = true;
             simContainer->setVisible(true);
             timeLabel->setText("Ciclo Actual: 0");
-            // Limpiar layouts de sincronización si existen
-            QLayoutItem* child;
-            while ((child = cicloLabelsLayout->takeAt(0)) != nullptr) {
-                if (child->widget()) delete child->widget();
-                delete child;
-            }
-            while ((child = timelineLayout->takeAt(0)) != nullptr) {
-                if (child->layout()) {
-                    QLayoutItem* subchild;
-                    while ((subchild = child->layout()->takeAt(0)) != nullptr) {
-                        if (subchild->widget()) delete subchild->widget();
-                        delete subchild;
-                    }
-                    delete child->layout();
-                }
-                delete child;
-            }
+
         }
 
 
